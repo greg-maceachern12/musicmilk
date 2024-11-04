@@ -1,10 +1,10 @@
 'use client';
 
 import { Upload, Image as ImageIcon, X } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
-import { MixMetadata } from './MixMetadata';
-import { Waveform } from './Waveform'
+import { Waveform } from './Waveform';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export function UploadZone() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -20,43 +20,100 @@ export function UploadZone() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [lastUploadedMix, setLastUploadedMix] = useState<string | null>(null);
 
-  // In UploadZone.tsx
+  const supabase = createClientComponentClient();
 
+  const resetForm = () => {
+    setAudioFile(null);
+    setCoverImage(null);
+    setCoverPreview(null);
+    setMetadata({
+      title: '',
+      artist: '',
+      genre: '',
+      description: ''
+    });
+    setUploadProgress(0);
+    setIsUploading(false);
+  };
 
   const handleUpload = async () => {
     if (!audioFile || !metadata.title) return;
 
     setIsUploading(true);
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: audioFile.name,
-          contentType: audioFile.type,
-        }),
-      });
+      // Upload audio file to Supabase Storage
+      const audioFileName = `${Date.now()}-${audioFile.name}`;
+      const { data: audioData, error: audioError } = await supabase.storage
+        .from('audio')
+        .upload(audioFileName, audioFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      const { uploadUrl, streamUrl, blobName } = await response.json();
-
-      // Upload the file
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'x-ms-blob-type': 'BlockBlob',
-          'Content-Type': audioFile.type,
-        },
-        body: audioFile
-      });
-
-      if (uploadResponse.ok) {
-        // Generate the shareable URL using the blob name
-        const shareUrl = `${window.location.origin}/mix/${blobName}`;
-
-        // Show success message with shareable link
-        setStreamUrl(shareUrl);
+      if (audioError) {
+        console.error('Audio upload error:', audioError);
+        throw audioError;
       }
+
+      // Get the public URL for the audio file
+      const { data: audioUrlData } = supabase.storage
+        .from('audio')
+        .getPublicUrl(audioFileName);
+
+      // Upload cover image if provided
+      let coverUrl = null;
+      if (coverImage) {
+        const coverFileName = `${Date.now()}-${coverImage.name}`;
+        const { data: coverData, error: coverError } = await supabase.storage
+          .from('covers')
+          .upload(coverFileName, coverImage, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (coverError) {
+          console.error('Cover upload error:', coverError);
+        } else {
+          const { data: coverUrlData } = supabase.storage
+            .from('covers')
+            .getPublicUrl(coverFileName);
+          coverUrl = coverUrlData.publicUrl;
+        }
+      }
+
+      // Store the mix metadata in the database
+      const { data: mix, error: dbError } = await supabase
+        .from('mixes')
+        .insert({
+          title: metadata.title,
+          artist: metadata.artist || null,
+          genre: metadata.genre || null,
+          description: metadata.description || null,
+          audio_url: audioUrlData.publicUrl,
+          cover_url: coverUrl,
+          play_count: 0
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
+
+      console.log('Mix uploaded successfully:', mix);
+
+      // Generate the share URL using the mix ID
+      const shareUrl = `${window.location.origin}/mix/${mix.id}`;
+      setStreamUrl(shareUrl);
+
+      setLastUploadedMix(metadata.title);
+      setUploadProgress(100);
+
+      // Reset the form
+      resetForm();
 
     } catch (error) {
       console.error('Upload failed:', error);
@@ -65,7 +122,6 @@ export function UploadZone() {
       setIsUploading(false);
     }
   };
-
 
   const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -85,6 +141,7 @@ export function UploadZone() {
 
   const clearAudio = () => {
     setAudioFile(null);
+    setUploadProgress(0);
   };
 
   const clearImage = () => {
@@ -96,7 +153,8 @@ export function UploadZone() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Main Upload Interface */}
       {!audioFile ? (
         // Initial Upload UI
         <div className="border-2 border-dashed border-gray-700 rounded-lg p-8">
@@ -115,10 +173,7 @@ export function UploadZone() {
                 type="file"
                 className="hidden"
                 accept="audio/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) setAudioFile(file);
-                }}
+                onChange={handleAudioSelect}
               />
               <span className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium inline-block">
                 Choose File
@@ -127,7 +182,7 @@ export function UploadZone() {
           </div>
         </div>
       ) : (
-        // Main Upload Interface
+        // Form Interface
         <div className="space-y-8">
           {/* Waveform Section */}
           <div className="bg-gray-800 rounded-lg p-6">
@@ -139,7 +194,7 @@ export function UploadZone() {
                 </p>
               </div>
               <button
-                onClick={() => setAudioFile(null)}
+                onClick={clearAudio}
                 className="p-2 hover:bg-gray-700 rounded-full"
               >
                 <X className="w-5 h-5" />
@@ -157,7 +212,7 @@ export function UploadZone() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Title
+                    Title*
                   </label>
                   <input
                     type="text"
@@ -216,14 +271,14 @@ export function UploadZone() {
                 <div className="space-y-4">
                   <div className="relative aspect-square">
                     <Image
-                      src={URL.createObjectURL(coverImage)}
+                      src={coverPreview!}
                       alt="Cover art preview"
                       fill
                       className="object-cover rounded-lg"
                     />
                   </div>
                   <button
-                    onClick={() => setCoverImage(null)}
+                    onClick={clearImage}
                     className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700"
                   >
                     Remove
@@ -237,10 +292,7 @@ export function UploadZone() {
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) setCoverImage(file);
-                    }}
+                    onChange={handleImageSelect}
                   />
                 </label>
               )}
@@ -252,7 +304,7 @@ export function UploadZone() {
             <div className="bg-gray-800 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-400">Uploading...</span>
-                <span className="text-sm text-gray-400">{uploadProgress}%</span>
+                <span className="text-sm text-gray-400">{Math.round(uploadProgress)}%</span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-2">
                 <div
@@ -262,28 +314,6 @@ export function UploadZone() {
               </div>
             </div>
           )}
-
-          {/* Stream URL Display */}
-          {streamUrl && (
-            <div className="bg-gray-800 rounded-lg p-4">
-              <h3 className="text-lg font-medium mb-2">🎉 Upload Complete!</h3>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={streamUrl}
-                  readOnly
-                  className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm"
-                />
-                <button
-                  onClick={() => navigator.clipboard.writeText(streamUrl)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Upload Button */}
           <div className="flex justify-end">
             <button
@@ -293,6 +323,28 @@ export function UploadZone() {
               disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
             >
               {isUploading ? 'Uploading...' : 'Upload Mix'}
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Success Message - Always show if there's a streamUrl */}
+      {streamUrl && (
+        <div className="bg-gray-800 rounded-lg p-4">
+          <h3 className="text-lg font-medium mb-2">
+            🎉 {lastUploadedMix} uploaded successfully!
+          </h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={streamUrl}
+              readOnly
+              className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm"
+            />
+            <button
+              onClick={() => navigator.clipboard.writeText(streamUrl)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"
+            >
+              Copy
             </button>
           </div>
         </div>

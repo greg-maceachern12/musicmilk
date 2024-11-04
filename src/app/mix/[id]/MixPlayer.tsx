@@ -1,92 +1,131 @@
-// app/mix/[id]/MixPlayer.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Play, Pause } from 'lucide-react';
-import WaveSurfer from 'wavesurfer.js';
+import { useState, useEffect } from 'react';
+import { Calendar, Music, User } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import Image from 'next/image';
+import { Waveform } from '@/app/components/Waveform';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+interface Mix {
+  id: string;
+  title: string;
+  artist: string | null;
+  genre: string | null;
+  description: string | null;
+  audio_url: string;
+  cover_url: string | null;
+  created_at: string;
+  play_count: number;
+}
 
 export function MixPlayer({ id }: { id: string }) {
+  const [mix, setMix] = useState<Mix | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const waveformRef = useRef<HTMLDivElement>(null);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
 
+  // Fetch mix data
   useEffect(() => {
-    if (!waveformRef.current) return;
+    async function fetchMix() {
+      const { data, error } = await supabase
+        .from('mixes')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    const wavesurfer = WaveSurfer.create({
-      container: waveformRef.current,
-      waveColor: '#4a5568',
-      progressColor: '#3b82f6',
-      cursorColor: '#3b82f6',
-      barWidth: 2,
-      barGap: 1,
-      height: 100,
-      normalize: true,
-      backend: 'MediaElement' // Add this line
-    });
+      if (error) {
+        console.error('Error fetching mix:', error);
+        return;
+      }
 
-    wavesurferRef.current = wavesurfer;
+      setMix(data);
 
-    // Add loading handler
-    wavesurfer.on('ready', () => {
-      setIsLoading(false);
-      console.log('Waveform ready!');
-    });
+      // Increment play count
+      const { error: updateError } = await supabase
+        .from('mixes')
+        .update({ play_count: (data.play_count || 0) + 1 })
+        .eq('id', id);
 
-    const audioUrl = `https://${process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/mixes/${id}`;
-    wavesurfer.load(audioUrl);
+      if (updateError) {
+        console.error('Error updating play count:', updateError);
+      }
+    }
 
-    wavesurfer.on('play', () => setIsPlaying(true));
-    wavesurfer.on('pause', () => setIsPlaying(false));
-
-    return () => {
-      wavesurfer.destroy();
-    };
+    fetchMix();
   }, [id]);
 
-  const togglePlayPause = () => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.playPause();
-    }
-  };
+  if (!mix) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading mix...</div>
+      </div>
+    );
+  }
+
+  const formattedDate = new Date(mix.created_at).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-gray-800 rounded-lg p-6">
-            {/* Mix Info */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold mb-2">Mix</h1>
-              <p className="text-gray-400">ID: {id}</p>
+            {/* Mix Header */}
+            <div className="flex items-start gap-6 mb-8">
+              {/* Cover Image */}
+              <div className="w-48 h-48 relative flex-shrink-0 bg-gray-700 rounded-lg overflow-hidden">
+                {mix.cover_url ? (
+                  <Image
+                    src={mix.cover_url}
+                    alt={mix.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Music className="w-12 h-12 text-gray-600" />
+                  </div>
+                )}
+              </div>
+
+              {/* Mix Info */}
+              <div className="flex-grow">
+                <h1 className="text-3xl font-bold mb-2">{mix.title}</h1>
+                {mix.artist && (
+                  <div className="flex items-center gap-2 text-gray-300 mb-2">
+                    <User className="w-4 h-4" />
+                    <span>{mix.artist}</span>
+                  </div>
+                )}
+                {mix.genre && (
+                  <div className="inline-block bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-sm mb-2">
+                    {mix.genre}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-gray-400 text-sm mt-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formattedDate}</span>
+                  <span className="mx-2">•</span>
+                  <span>{mix.play_count} plays</span>
+                </div>
+                {mix.description && (
+                  <p className="text-gray-300 mt-4">{mix.description}</p>
+                )}
+              </div>
             </div>
 
             {/* Waveform */}
-            <div className="mb-4 bg-gray-700/50 rounded-lg p-4">
-              {isLoading && (
-                <div className="flex justify-center items-center h-[100px]">
-                  <div className="animate-pulse text-gray-400">
-                    Generating waveform...
-                  </div>
-                </div>
-              )}
-              <div ref={waveformRef} className={isLoading ? 'invisible' : ''} />
-            </div>
-
-            {/* Player Controls */}
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={togglePlayPause}
-                disabled={isLoading}
-                className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isPlaying ? (
-                  <Pause className="w-6 h-6" />
-                ) : (
-                  <Play className="w-6 h-6" />
-                )}
-              </button>
+            <div className="bg-gray-700/50 rounded-lg p-4">
+              <Waveform 
+                audioUrl={mix.audio_url}
+                onPlayPause={setIsPlaying}
+              />
             </div>
           </div>
         </div>

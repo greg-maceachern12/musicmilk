@@ -1,54 +1,78 @@
 // app/api/upload/route.ts
-import { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } from '@azure/storage-blob';
-
-if (!process.env.AZURE_STORAGE_ACCOUNT || !process.env.AZURE_STORAGE_ACCESS_KEY) {
-  throw new Error('Azure Storage credentials not found');
-}
-
-const credential = new StorageSharedKeyCredential(
-  process.env.AZURE_STORAGE_ACCOUNT,
-  process.env.AZURE_STORAGE_ACCESS_KEY
-);
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
-    const { filename, contentType } = await request.json();
+    const { audioFile, title, artist, genre, description, coverImage } = await request.json();
 
-    // Create unique blob name
-    const blobName = `${Date.now()}-${filename}`;
-    
-    // Create permissions
-    const permissions = new BlobSASPermissions();
-    permissions.read = true;
-    permissions.write = true;
-    permissions.create = true;
+    // Initialize Supabase client
+    const supabase = createRouteHandlerClient({ cookies });
 
-    // Generate SAS token
-    const startsOn = new Date();
-    const expiresOn = new Date(new Date().valueOf() + 3600 * 1000);
-    
-    const sasToken = generateBlobSASQueryParameters({
-      containerName: 'mixes',
-      blobName: blobName,
-      permissions: permissions,
-      startsOn: startsOn,
-      expiresOn: expiresOn,
-    }, credential).toString();
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Construct URLs
-    const baseUrl = `https://${process.env.AZURE_STORAGE_ACCOUNT}.blob.core.windows.net`;
-    const uploadUrl = `${baseUrl}/mixes/${blobName}?${sasToken}`;
-    const streamUrl = `${baseUrl}/mixes/${blobName}`;
+    // Upload audio file to Supabase Storage
+    const audioFileName = `${Date.now()}-${audioFile.name}`;
+    const { data: audioData, error: audioError } = await supabase.storage
+      .from('audio')
+      .upload(audioFileName, audioFile);
 
-    return Response.json({
-      uploadUrl,
-      streamUrl,
-      blobName,
-      sasToken
+    if (audioError) {
+      throw audioError;
+    }
+
+    // Get the public URL for the audio file
+    const { data: { publicUrl: audioUrl } } = supabase.storage
+      .from('audio')
+      .getPublicUrl(audioFileName);
+
+    // Upload cover image if provided
+    let coverUrl = null;
+    if (coverImage) {
+      const coverFileName = `${Date.now()}-${coverImage.name}`;
+      const { data: coverData, error: coverError } = await supabase.storage
+        .from('covers')
+        .upload(coverFileName, coverImage);
+
+      if (!coverError) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('covers')
+          .getPublicUrl(coverFileName);
+        coverUrl = publicUrl;
+      }
+    }
+
+    // Store metadata in the database
+    const { data: mix, error: dbError } = await supabase
+      .from('mixes')
+      .insert({
+        title,
+        artist,
+        genre,
+        description,
+        audio_url: audioUrl,
+        cover_url: coverUrl,
+        user_id: user.id
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      throw dbError;
+    }
+
+    return Response.json({ 
+      mix,
+      audioUrl,
+      coverUrl
     });
 
   } catch (error) {
-    console.error('Error generating upload URL:', error);
+    console.error('Upload error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
