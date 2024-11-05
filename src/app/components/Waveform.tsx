@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Download } from 'lucide-react';
 
 interface WaveformProps {
   audioUrl?: string;
@@ -90,6 +90,39 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
     }
   };
 
+  const handleDownload = async () => {
+    try {
+      if (audioFile) {
+        // If we have a File object, create a download link for it
+        const url = URL.createObjectURL(audioFile);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `musicmilk_${audioFile.name}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else if (audioUrl) {
+        // If we have a URL, fetch it and create a download
+        const response = await fetch(audioUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // Extract filename from URL or use a default name
+        const originalName = audioUrl.split('/').pop() || 'audio.mp3';
+        const filename = `musicmilk_${originalName}`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {isLoading ? (
@@ -108,9 +141,9 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
           className="bg-blue-600 hover:bg-blue-700 p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPlaying ? (
-            <Pause className="w-6 h-6" />
+            <Pause className="w-6 h-6 text-white" />
           ) : (
-            <Play className="w-6 h-6" />
+            <Play className="w-6 h-6 text-white" />
           )}
         </button>
 
@@ -119,6 +152,15 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
           <span>/</span>
           <span>{formatTime(duration)}</span>
         </div>
+
+        <button
+          onClick={handleDownload}
+          disabled={isLoading}
+          className="bg-blue-600/10 hover:bg-blue-600/20 p-2.5 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ml-auto group"
+          title="Download audio"
+        >
+          <Download className="w-5 h-5 text-blue-600 transition-transform group-hover:scale-110" />
+        </button>
       </div>
     </div>
   );

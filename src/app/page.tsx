@@ -1,6 +1,7 @@
 'use client';
 
 import { UploadZone } from './components/UploadZone';
+import RecentMixes from './components/RecentMixes';
 
 export default function Home() {
   return (
@@ -19,16 +20,10 @@ export default function Home() {
         <UploadZone />
       </section>
 
-      {/* Featured Mixes Section */}
+      {/* Recent Mixes Section */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold">Featured Mixes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-gray-800 rounded-lg p-4 space-y-3">
-            <div className="bg-gray-700 h-40 rounded-md"></div>
-            <h3 className="font-medium">Summer Vibes Mix</h3>
-            <p className="text-sm text-gray-400">by DJ Example</p>
-          </div>
-        </div>
+        <h2 className="text-2xl font-bold">Recent Mixes</h2>
+        <RecentMixes />
       </section>
     </div>
   );
