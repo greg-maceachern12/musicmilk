@@ -33,12 +33,12 @@ export default function RootLayout({
                 <span className="text-2xl font-bold">Music Milk</span>
               </Link>
               <div className="flex items-center gap-4">
-                <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors" disabled>
+                <Link href='/' className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
                   Explore
-                </button>
-                <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors" disabled>
+                </Link>
+                <Link href='/' className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                   Upload Mix
-                </button>
+                </Link>
               </div>
             </div>
           </div>
