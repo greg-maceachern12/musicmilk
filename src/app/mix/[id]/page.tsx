@@ -6,18 +6,16 @@ import { Metadata } from 'next';
 
 export const revalidate = 0;
 
-type Props = {
-  params: Promise<{ id: string }> | { id: string }
-};
+type Params = Promise<{ id: string }>;
 
-export async function generateMetadata(
-  { params }: Props
-): Promise<Metadata> {
+// Generate metadata for the page
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Params 
+}): Promise<Metadata> {
   const { id } = await params;
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ 
-    cookies: () => cookieStore 
-  });
+  const supabase = createServerComponentClient({ cookies });
   
   const { data: mix } = await supabase
     .from('mixes')
@@ -26,23 +24,21 @@ export async function generateMetadata(
     .single();
 
   if (!mix) {
-    return {
-      title: 'Mix Not Found | MusicMilk',
-    };
+    notFound();
   }
 
   return {
-    title: `${mix.title} | MusicMilk`,
-    description: mix.description || `Listen to ${mix.title} on MusicMilk`,
+    title: mix.title,
+    description: mix.description || 'Listen to this mix on MusicMilk',
     openGraph: {
       title: mix.title,
-      description: mix.description || `Listen to ${mix.title} on MusicMilk`,
+      description: mix.description || 'Listen to this mix on MusicMilk',
       images: [
         {
-          url: mix.cover_url || '/logo.png', // Fallback to your logo if no cover
+          url: mix.cover_url || '/images/logo.png', // Using the logo from your public directory
           width: 1200,
           height: 630,
-          alt: mix.title,
+          alt: 'MusicMilk Logo'
         }
       ],
       type: 'music.song',
@@ -51,18 +47,19 @@ export async function generateMetadata(
     twitter: {
       card: 'summary_large_image',
       title: mix.title,
-      description: mix.description || `Listen to ${mix.title} on MusicMilk`,
-      images: [mix.cover_url || '/logo.png'], // Fallback to your logo if no cover
-    },
+      description: mix.description || 'Listen to this mix on MusicMilk',
+      images: [mix.cover_url || '/images/logo.png'],
+    }
   };
 }
 
-export default async function MixPage({ params }: Props) {
+export default async function MixPage({ 
+  params 
+}: { 
+  params: Params 
+}) {
   const { id } = await params;
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ 
-    cookies: () => cookieStore 
-  });
+  const supabase = createServerComponentClient({ cookies });
   
   const { data: mix } = await supabase
     .from('mixes')
