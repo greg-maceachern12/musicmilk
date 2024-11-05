@@ -21,12 +21,12 @@ export default function RootLayout({
         <nav className="border-b border-gray-800">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <Link className="text-2xl font-bold" href='/'>MusicMilk</Link>
+              <Link className="text-2xl font-bold" href='/'>Music Milk</Link>
               <div className="flex items-center gap-4">
-                <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors" disabled>
                   Explore
                 </button>
-                <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors" disabled>
                   Upload Mix
                 </button>
               </div>

@@ -8,10 +8,10 @@ export default function Home() {
     <div className="space-y-8">
       {/* Hero Section */}
       <section className="text-center space-y-4 py-12">
-        <h1 className="text-4xl font-bold">Share Your Long-Form Mixes</h1>
+        <h1 className="text-4xl font-bold">Share Your Mixes</h1>
         <p className="text-gray-400 max-w-2xl mx-auto">
-          Upload your 30-60 minute mixtapes and share them with the world. 
-          High-quality audio streaming with beautiful waveform visualization.
+          From mashups to mixtaps, Music Milk is the home
+          for all your creative combinations
         </p>
       </section>
 
