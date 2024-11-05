@@ -45,7 +45,7 @@ export function UploadZone() {
     try {
       // Upload audio file to Supabase Storage
       const audioFileName = `${Date.now()}-${audioFile.name}`;
-      const { data: audioData, error: audioError } = await supabase.storage
+      const { error: audioError } = await supabase.storage
         .from('audio')
         .upload(audioFileName, audioFile, {
           cacheControl: '3600',
@@ -66,7 +66,7 @@ export function UploadZone() {
       let coverUrl = null;
       if (coverImage) {
         const coverFileName = `${Date.now()}-${coverImage.name}`;
-        const { data: coverData, error: coverError } = await supabase.storage
+        const { error: coverError } = await supabase.storage
           .from('covers')
           .upload(coverFileName, coverImage, {
             cacheControl: '3600',

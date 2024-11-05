@@ -25,7 +25,7 @@ interface Mix {
 
 export function MixPlayer({ id }: { id: string }) {
   const [mix, setMix] = useState<Mix | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // const [isPlaying, setIsPlaying] = useState(false);
 
   // Fetch mix data
   useEffect(() => {

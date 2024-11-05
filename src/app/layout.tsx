@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from 'next/link';
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -20,7 +21,7 @@ export default function RootLayout({
         <nav className="border-b border-gray-800">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <a className="text-2xl font-bold" href='/'>MusicMilk</a>
+              <Link className="text-2xl font-bold" href='/'>MusicMilk</Link>
               <div className="flex items-center gap-4">
                 <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
                   Explore

@@ -1,23 +1,16 @@
-// app/api/upload/route.ts
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-
 export async function POST(request: Request) {
   try {
     const { audioFile, title, artist, genre, description, coverImage } = await request.json();
-
-    // Initialize Supabase client
     const supabase = createRouteHandlerClient({ cookies });
 
-    // Get the current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Upload audio file to Supabase Storage
+    // Upload audio file
     const audioFileName = `${Date.now()}-${audioFile.name}`;
-    const { data: audioData, error: audioError } = await supabase.storage
+    const { error: audioError } = await supabase.storage
       .from('audio')
       .upload(audioFileName, audioFile);
 
@@ -25,7 +18,7 @@ export async function POST(request: Request) {
       throw audioError;
     }
 
-    // Get the public URL for the audio file
+    // Get audio URL
     const { data: { publicUrl: audioUrl } } = supabase.storage
       .from('audio')
       .getPublicUrl(audioFileName);
@@ -34,7 +27,7 @@ export async function POST(request: Request) {
     let coverUrl = null;
     if (coverImage) {
       const coverFileName = `${Date.now()}-${coverImage.name}`;
-      const { data: coverData, error: coverError } = await supabase.storage
+      const { error: coverError } = await supabase.storage
         .from('covers')
         .upload(coverFileName, coverImage);
 
@@ -46,7 +39,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Store metadata in the database
+    // Store metadata
     const { data: mix, error: dbError } = await supabase
       .from('mixes')
       .insert({
