@@ -1,3 +1,7 @@
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+
 export async function POST(request: Request) {
   try {
     const { audioFile, title, artist, genre, description, coverImage } = await request.json();
@@ -5,7 +9,7 @@ export async function POST(request: Request) {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Upload audio file
@@ -58,7 +62,7 @@ export async function POST(request: Request) {
       throw dbError;
     }
 
-    return Response.json({ 
+    return NextResponse.json({ 
       mix,
       audioUrl,
       coverUrl
@@ -66,6 +70,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Upload error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

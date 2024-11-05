@@ -5,20 +5,25 @@ import { notFound } from 'next/navigation';
 
 export const revalidate = 0;
 
-export default async function MixPage({ params }: { params: { id: string } }) {
+type Params = Promise<{ id: string }>;
+
+export default async function MixPage({ 
+  params 
+}: { 
+  params: Params 
+}) {
+  const { id } = await params;
   const supabase = createServerComponentClient({ cookies });
   
-  // Check if mix exists
   const { data: mix } = await supabase
     .from('mixes')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
-  // If mix doesn't exist, show 404
   if (!mix) {
     notFound();
   }
 
-  return <MixPlayer id={params.id} />;
+  return <MixPlayer id={id} />;
 }

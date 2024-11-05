@@ -2,14 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Music, User } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { Waveform } from '@/app/components/Waveform';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface Mix {
   id: string;
@@ -25,7 +20,7 @@ interface Mix {
 
 export function MixPlayer({ id }: { id: string }) {
   const [mix, setMix] = useState<Mix | null>(null);
-  // const [isPlaying, setIsPlaying] = useState(false);
+  const supabase = createClientComponentClient();
 
   // Fetch mix data
   useEffect(() => {
@@ -55,7 +50,7 @@ export function MixPlayer({ id }: { id: string }) {
     }
 
     fetchMix();
-  }, [id]);
+  }, [id, supabase]);
 
   if (!mix) {
     return (
@@ -124,7 +119,6 @@ export function MixPlayer({ id }: { id: string }) {
             <div className="bg-gray-700/50 rounded-lg p-4">
               <Waveform 
                 audioUrl={mix.audio_url}
-                onPlayPause={setIsPlaying}
               />
             </div>
           </div>

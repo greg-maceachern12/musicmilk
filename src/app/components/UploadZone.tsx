@@ -117,7 +117,8 @@ export function UploadZone() {
 
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed: ' + error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert('Upload failed: ' + errorMessage);
     } finally {
       setIsUploading(false);
     }

@@ -65,7 +65,7 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
       onPlayPause?.(false);
     });
 
-    wavesurfer.on('seek', () => {
+    wavesurfer.on('timeupdate', () => {
       setCurrentTime(wavesurfer.getCurrentTime());
     });
 
