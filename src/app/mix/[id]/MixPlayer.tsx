@@ -73,7 +73,6 @@ export function MixPlayer({ id }: { id: string }) {
     try {
       console.log('Deleting audio:', mix.audio_storage_path);
       
-      // Delete the audio file from storage
       const { error: audioError } = await supabase.storage
         .from('audio')
         .remove([mix.audio_storage_path]);
@@ -83,7 +82,6 @@ export function MixPlayer({ id }: { id: string }) {
         throw audioError;
       }
   
-      // Delete cover image if it exists
       if (mix.cover_storage_path) {
         console.log('Deleting cover:', mix.cover_storage_path);
         
@@ -93,11 +91,9 @@ export function MixPlayer({ id }: { id: string }) {
         
         if (coverError) {
           console.error('Error deleting cover:', coverError);
-          // Don't throw here, as cover deletion is not critical
         }
       }
   
-      // Delete the database record
       const { error: dbError } = await supabase
         .from('mixes')
         .delete()
@@ -108,7 +104,6 @@ export function MixPlayer({ id }: { id: string }) {
         throw dbError;
       }
   
-      // Redirect to home page
       router.push('/');
         
     } catch (error) {
@@ -137,86 +132,94 @@ export function MixPlayer({ id }: { id: string }) {
   const isOwner = Boolean(user && mix.user_id === user.id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
-      <main className="px-4 py-6 max-w-3xl mx-auto">
-        {/* Cover Art Section */}
-        <div className="mb-6 relative aspect-square max-w-xs mx-auto">
-          <div className="w-full h-full rounded-2xl overflow-hidden bg-gray-800 shadow-lg">
-            {mix.cover_url ? (
-              <Image
-                src={mix.cover_url}
-                alt={mix.title}
-                fill
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Music className="w-16 h-16 text-gray-600" />
+    <div>
+      <main className="container mx-auto px-4 py-6 lg:py-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 lg:p-8 shadow-lg">
+            {/* Mix Content */}
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
+              {/* Cover Art Section */}
+              <div className="w-full lg:w-60 shrink-0">
+                <div className="aspect-square w-full rounded-xl overflow-hidden bg-gray-700 shadow-lg relative">
+                  {mix.cover_url ? (
+                    <Image
+                      src={mix.cover_url}
+                      alt={mix.title}
+                      width={320}
+                      height={320}
+                      className="object-cover w-full h-full"
+                      priority
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-20 h-20 text-gray-600" />
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Mix Info Section */}
-        <div className="space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl font-bold text-white leading-tight break-words flex-1">
-              {mix.title}
-            </h1>
-            <MixMenu
-              isOwner={isOwner}
-              onDelete={() => setShowDeleteConfirm(true)}
-            />
-          </div>
+              {/* Mix Info Section */}
+              <div className="flex-1 flex flex-col min-w-0 lg:py-2">
+                <div className="flex items-start justify-between gap-4">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-white leading-tight break-words">
+                    {mix.title}
+                  </h1>
+                  <MixMenu
+                    isOwner={isOwner}
+                    onDelete={() => setShowDeleteConfirm(true)}
+                  />
+                </div>
 
-          {mix.artist && (
-            <div className="flex items-center gap-2 text-gray-300">
-              <User className="w-4 h-4" />
-              <span className="text-lg">{mix.artist}</span>
+                {mix.artist && (
+                  <div className="flex items-center gap-2 text-gray-300 mt-5">
+                    <User className="w-4 h-4" />
+                    <span className="text-lg">{mix.artist}</span>
+                  </div>
+                )}
+
+                {mix.genre && (
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
+                      {mix.genre}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3 text-gray-400 mt-5">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>{formattedDate}</span>
+                  </div>
+                  <span>•</span>
+                  <span>{mix.play_count.toLocaleString()} plays</span>
+                </div>
+
+                {mix.description && (
+                  <p className="text-gray-300 text-sm leading-relaxed mt-5 lg:max-w-2xl">
+                    {mix.description}
+                  </p>
+                )}
+              </div>
             </div>
-          )}
 
-          {mix.genre && (
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">
-                {mix.genre}
-              </span>
+            {/* Waveform Player */}
+            <div className="mt-8 lg:mt-10 bg-gray-700/30 rounded-xl p-4 lg:p-5 shadow-md">
+              <Waveform audioUrl={mix.audio_url} />
             </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 text-gray-400 text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>{formattedDate}</span>
-            </div>
-            <span>•</span>
-            <span>{mix.play_count} plays</span>
           </div>
-
-          {mix.description && (
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {mix.description}
-            </p>
-          )}
-        </div>
-
-        {/* Waveform Player */}
-        <div className="mt-6 bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm">
-          <Waveform audioUrl={mix.audio_url} />
         </div>
       </main>
 
-      {/* Delete Modal - Improved mobile layout */}
+      {/* Delete Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-t-xl sm:rounded-xl p-6 w-full max-w-sm mx-auto">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-gray-800 rounded-xl p-6 w-full max-w-sm mx-auto">
             <div className="flex items-start gap-4">
               <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
               <div className="space-y-2 flex-1">
                 <h3 className="text-lg font-semibold text-white">Delete Mix</h3>
                 <p className="text-gray-300 text-sm">
-                  Are you sure you want to delete &ldquo;{mix.title}&rdquo;? This action cannot be undone.
+                  Are you sure you want to delete "{mix.title}"? This action cannot be undone.
                 </p>
               </div>
             </div>
