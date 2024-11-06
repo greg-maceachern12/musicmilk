@@ -219,7 +219,7 @@ export function MixPlayer({ id }: { id: string }) {
               <div className="space-y-2 flex-1">
                 <h3 className="text-lg font-semibold text-white">Delete Mix</h3>
                 <p className="text-gray-300 text-sm">
-                  Are you sure you want to delete "{mix.title}"? This action cannot be undone.
+                  Are you sure you want to delete &ldquo;{mix.title}&rdquo;? This action cannot be undone.
                 </p>
               </div>
             </div>
