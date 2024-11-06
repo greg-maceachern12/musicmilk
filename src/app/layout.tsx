@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from 'next/link';
 import Image from 'next/image';
+import Script from 'next/script';
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -18,6 +19,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-P8692YZSLG"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-P8692YZSLG');
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.className} bg-gray-900 text-white`}>
         <nav className="border-b border-gray-800">
           <div className="container mx-auto px-4 py-4">
