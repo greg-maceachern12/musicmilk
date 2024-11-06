@@ -119,9 +119,10 @@ export function MixPlayer({ id }: { id: string }) {
       setShowDeleteConfirm(false);
     }
   };
+
   if (!mix) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="animate-pulse text-gray-400">Loading mix...</div>
       </div>
     );
@@ -136,103 +137,101 @@ export function MixPlayer({ id }: { id: string }) {
   const isOwner = Boolean(user && mix.user_id === user.id);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <main className="container mx-auto px-4 py-8 md:py-16">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-800 rounded-lg p-4 md:p-8">
-            {/* Mix Header */}
-            <div className="flex flex-col md:flex-row md:items-start gap-6 mb-8">
-              {/* Cover Image */}
-              <div className="mx-auto md:mx-0 w-48 h-48 relative flex-shrink-0 bg-gray-700 rounded-lg overflow-hidden mb-4 md:mb-0">
-                {mix.cover_url ? (
-                  <Image
-                    src={mix.cover_url}
-                    alt={mix.title}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Music className="w-12 h-12 text-gray-600" />
-                  </div>
-                )}
-              </div>
-
-              {/* Mix Info */}
-              <div className="flex-grow text-center md:text-left space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <h1 className="text-2xl md:text-4xl font-bold break-words">{mix.title}</h1>
-                  <MixMenu
-                    isOwner={isOwner}
-                    onDelete={() => setShowDeleteConfirm(true)}
-                  />
-                </div>
-
-                {mix.artist && (
-                  <div className="flex items-center gap-2 text-gray-300 justify-center md:justify-start">
-                    <User className="w-4 h-4" />
-                    <span className="break-words text-lg">{mix.artist}</span>
-                  </div>
-                )}
-
-                {mix.genre && (
-                  <div className="inline-block bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-sm">
-                    {mix.genre}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center gap-3 text-gray-400 text-sm justify-center md:justify-start">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{formattedDate}</span>
-                  </div>
-                  <span className="hidden md:inline">•</span>
-                  <span>{mix.play_count} plays</span>
-                </div>
-
-                {mix.description && (
-                  <p className="text-gray-300 text-sm md:text-base break-words">
-                    {mix.description}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Waveform */}
-            <div className="bg-gray-700/50 rounded-lg p-4 md:p-6 mt-8">
-              <Waveform
-                audioUrl={mix.audio_url}
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      <main className="px-4 py-6 max-w-3xl mx-auto">
+        {/* Cover Art Section */}
+        <div className="mb-6 relative aspect-square max-w-xs mx-auto">
+          <div className="w-full h-full rounded-2xl overflow-hidden bg-gray-800 shadow-lg">
+            {mix.cover_url ? (
+              <Image
+                src={mix.cover_url}
+                alt={mix.title}
+                fill
+                className="object-cover"
+                priority
               />
-            </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Music className="w-16 h-16 text-gray-600" />
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Mix Info Section */}
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl font-bold text-white leading-tight break-words flex-1">
+              {mix.title}
+            </h1>
+            <MixMenu
+              isOwner={isOwner}
+              onDelete={() => setShowDeleteConfirm(true)}
+            />
+          </div>
+
+          {mix.artist && (
+            <div className="flex items-center gap-2 text-gray-300">
+              <User className="w-4 h-4" />
+              <span className="text-lg">{mix.artist}</span>
+            </div>
+          )}
+
+          {mix.genre && (
+            <div className="flex flex-wrap gap-2">
+              <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">
+                {mix.genre}
+              </span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 text-gray-400 text-sm">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span>{formattedDate}</span>
+            </div>
+            <span>•</span>
+            <span>{mix.play_count} plays</span>
+          </div>
+
+          {mix.description && (
+            <p className="text-gray-300 text-sm leading-relaxed">
+              {mix.description}
+            </p>
+          )}
+        </div>
+
+        {/* Waveform Player */}
+        <div className="mt-6 bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm">
+          <Waveform audioUrl={mix.audio_url} />
         </div>
       </main>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal - Improved mobile layout */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-gray-800 rounded-t-xl sm:rounded-xl p-6 w-full max-w-sm mx-auto">
             <div className="flex items-start gap-4">
               <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Delete Mix</h3>
+              <div className="space-y-2 flex-1">
+                <h3 className="text-lg font-semibold text-white">Delete Mix</h3>
                 <p className="text-gray-300 text-sm">
-                Are you sure you want to delete &ldquo;{mix.title}&rdquo;? This action cannot be undone..
+                  Are you sure you want to delete &ldquo;{mix.title}&rdquo;? This action cannot be undone.
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="grid grid-cols-2 gap-3 mt-6">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                className="w-full px-4 py-3 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
                 disabled={isDeleting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                className="w-full px-4 py-3 text-sm font-medium bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                 disabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
