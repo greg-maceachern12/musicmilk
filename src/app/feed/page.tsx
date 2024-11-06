@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import debounce from 'lodash/debounce';
+import { debounce } from 'lodash';
 import { MixCard, MixCardSkeleton } from '../components/MixCard';
 
 interface Mix {
@@ -16,6 +16,8 @@ interface Mix {
   created_at: string;
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export default function FeedPage() {
   const [mixes, setMixes] = useState<Mix[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,8 +26,8 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const loaderRef = useRef(null);
   const supabase = createClientComponentClient();
-  const MIXES_PER_PAGE = 3;
 
   const fetchMixes = async (pageNumber: number, search: string, isInitial: boolean = false) => {
     try {
@@ -44,7 +46,7 @@ export default function FeedPage() {
       }
 
       const { data, error, count } = await query
-        .range(pageNumber * MIXES_PER_PAGE, (pageNumber + 1) * MIXES_PER_PAGE - 1);
+        .range(pageNumber * ITEMS_PER_PAGE, (pageNumber + 1) * ITEMS_PER_PAGE - 1);
 
       if (error) {
         throw error;
@@ -57,7 +59,7 @@ export default function FeedPage() {
       }
 
       const totalMixes = count || 0;
-      setHasMore((pageNumber + 1) * MIXES_PER_PAGE < totalMixes);
+      setHasMore((pageNumber + 1) * ITEMS_PER_PAGE < totalMixes);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load mixes');
@@ -67,28 +69,47 @@ export default function FeedPage() {
     }
   };
 
-  // Debounced search function
-  const debouncedSearch = debounce((query: string) => {
-    setPage(0);
-    fetchMixes(0, query, true);
-  }, 300);
+  // Intersection Observer callback
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const target = entries[0];
+    if (target.isIntersecting && hasMore && !isLoadingMore) {
+      setPage(prevPage => prevPage + 1);
+    }
+  }, [hasMore, isLoadingMore]);
 
+  // Set up intersection observer
   useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '20px',
+      threshold: 0.1
+    });
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [handleObserver]);
+
+  // Fetch more mixes when page changes
+  useEffect(() => {
+    if (page > 0) {
+      fetchMixes(page, searchQuery);
+    }
+  }, [page]);
+
+  // Initial fetch and search handling
+  useEffect(() => {
+    setIsLoading(true);
+    setPage(0);
     fetchMixes(0, searchQuery, true);
-  }, []);
+  }, [searchQuery]);
 
-  const handleLoadMore = async () => {
-    if (!hasMore || isLoadingMore) return;
-    const nextPage = page + 1;
-    await fetchMixes(nextPage, searchQuery);
-    setPage(nextPage);
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    debouncedSearch(query);
-  };
+  // Debounced search function
+  const handleSearchChange = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, 300);
 
   if (error) {
     return (
@@ -105,7 +126,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-h-screen">
       {/* Header */}
       <div className="text-center space-y-4 py-8">
         <h1 className="text-4xl font-bold">Explore Mixes</h1>
@@ -119,7 +140,6 @@ export default function FeedPage() {
           <input
             type="text"
             placeholder="Search by title, artist, or genre..."
-            value={searchQuery}
             onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -127,7 +147,7 @@ export default function FeedPage() {
       </div>
 
       {/* Mixes Grid */}
-      <div className="space-y-6">
+      <div className="space-y-6 px-4">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
@@ -135,26 +155,22 @@ export default function FeedPage() {
             ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mixes.map((mix) => (
-                <MixCard key={mix.id} mix={mix} />
-              ))}
-            </div>
-
-            {hasMore && (
-              <div className="flex justify-center">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  className="px-6 py-3 text-sm bg-gray-800 rounded-md hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoadingMore ? 'Loading...' : 'Load More'}
-                </button>
-              </div>
-            )}
-          </>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {mixes.map((mix) => (
+              <MixCard key={mix.id} mix={mix} />
+            ))}
+          </div>
         )}
+
+        {/* Infinite scroll trigger element */}
+        <div 
+          ref={loaderRef}
+          className="h-10 w-full flex items-center justify-center"
+        >
+          {isLoadingMore && (
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          )}
+        </div>
       </div>
     </div>
   );
