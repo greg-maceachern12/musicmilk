@@ -40,49 +40,55 @@ export function UploadZone() {
 
   const handleUpload = async () => {
     if (!audioFile || !metadata.title) return;
-
+  
     setIsUploading(true);
     try {
+      // Get current user if logged in
+      const { data: { user } } = await supabase.auth.getUser();
+  
+      // Generate unique filenames with timestamp
+      const audioStoragePath = `${Date.now()}-${audioFile.name}`;
+      let coverStoragePath = null;
+  
       // Upload audio file to Supabase Storage
-      const audioFileName = `${Date.now()}-${audioFile.name}`;
       const { error: audioError } = await supabase.storage
         .from('audio')
-        .upload(audioFileName, audioFile, {
+        .upload(audioStoragePath, audioFile, {
           cacheControl: '3600',
           upsert: false
         });
-
+  
       if (audioError) {
         console.error('Audio upload error:', audioError);
         throw audioError;
       }
-
+  
       // Get the public URL for the audio file
       const { data: audioUrlData } = supabase.storage
         .from('audio')
-        .getPublicUrl(audioFileName);
-
+        .getPublicUrl(audioStoragePath);
+  
       // Upload cover image if provided
       let coverUrl = null;
       if (coverImage) {
-        const coverFileName = `${Date.now()}-${coverImage.name}`;
+        coverStoragePath = `${Date.now()}-${coverImage.name}`;
         const { error: coverError } = await supabase.storage
           .from('covers')
-          .upload(coverFileName, coverImage, {
+          .upload(coverStoragePath, coverImage, {
             cacheControl: '3600',
             upsert: false
           });
-
+  
         if (coverError) {
           console.error('Cover upload error:', coverError);
         } else {
           const { data: coverUrlData } = supabase.storage
             .from('covers')
-            .getPublicUrl(coverFileName);
+            .getPublicUrl(coverStoragePath);
           coverUrl = coverUrlData.publicUrl;
         }
       }
-
+  
       // Store the mix metadata in the database
       const { data: mix, error: dbError } = await supabase
         .from('mixes')
@@ -92,29 +98,29 @@ export function UploadZone() {
           genre: metadata.genre || null,
           description: metadata.description || null,
           audio_url: audioUrlData.publicUrl,
+          audio_storage_path: audioStoragePath,  // Store the storage path
           cover_url: coverUrl,
-          play_count: 0
+          cover_storage_path: coverStoragePath,  // Store the storage path
+          play_count: 0,
+          user_id: user?.id || null
         })
         .select()
         .single();
-
+  
       if (dbError) {
         console.error('Database error:', dbError);
         throw dbError;
       }
-
-      console.log('Mix uploaded successfully:', mix);
-
+  
       // Generate the share URL using the mix ID
       const shareUrl = `${window.location.origin}/mix/${mix.id}`;
       setStreamUrl(shareUrl);
-
       setLastUploadedMix(metadata.title);
       setUploadProgress(100);
-
+  
       // Reset the form
       resetForm();
-
+  
     } catch (error) {
       console.error('Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

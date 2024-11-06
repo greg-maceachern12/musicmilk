@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Script from 'next/script';
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthButton } from "./components/AuthButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -58,6 +59,7 @@ export default function RootLayout({
                 <Link href='/' className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                   Upload Mix
                 </Link>
+                <AuthButton />
               </div>
             </div>
           </div>
