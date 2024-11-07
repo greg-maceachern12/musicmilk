@@ -217,8 +217,6 @@ export function MixPlayer({ id }: { id: string }) {
     day: 'numeric'
   });
 
-  const isOwner = Boolean(user && mix.user_id === user.id);
-
   return (
     <div>
       <main className="container mx-auto px-4 py-6 lg:py-12">

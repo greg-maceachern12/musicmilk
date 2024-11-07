@@ -70,7 +70,7 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
       barGap: 1,
       height: 80,
       normalize: true,
-      backend: 'WebAudio',
+      backend: 'WebAudio' as const,
       // Important: These settings prevent horizontal scrolling
       fillParent: true,
       responsive: true,

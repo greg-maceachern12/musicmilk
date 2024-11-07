@@ -2,6 +2,7 @@
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from '@supabase/supabase-js';
+import { PostgrestError } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Music2, CalendarDays, PlayCircle, Heart } from 'lucide-react';
@@ -15,6 +16,11 @@ interface Mix {
   cover_url: string | null;
   play_count: number;
   created_at: string;
+}
+
+interface LikedMixJoin {
+  mix_id: string;
+  mixes: Mix;
 }
 
 export default function ProfilePage() {
@@ -48,7 +54,7 @@ export default function ProfilePage() {
         if (mixesError) throw mixesError;
         setMixes(mixesData);
 
-        // Fetch liked mixes
+        // Fetch liked mixes with proper typing
         const { data: likedData, error: likedError } = await supabase
           .from('likes')
           .select(`
@@ -64,14 +70,17 @@ export default function ProfilePage() {
             )
           `)
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as { 
+            data: LikedMixJoin[] | null;
+            error: PostgrestError | null;
+          };
 
         if (likedError) throw likedError;
         
         // Extract the mix data from the joined query
         const likedMixesData = likedData
-          .map(item => item.mixes)
-          .filter(mix => mix !== null) as Mix[];
+          ?.filter(item => item.mixes) // Filter out any null mixes
+          .map(item => item.mixes) || [];
         
         setLikedMixes(likedMixesData);
 
