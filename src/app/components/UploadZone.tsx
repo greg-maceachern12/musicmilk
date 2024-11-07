@@ -170,7 +170,7 @@ export function UploadZone() {
               <Upload className="w-8 h-8 text-blue-500" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold">Upload your mix</h3>
+              <h3 className="text-xl font-semibold">Upload Your Mix</h3>
               <p className="text-sm text-gray-400">
                 Drag and drop or click to select
               </p>

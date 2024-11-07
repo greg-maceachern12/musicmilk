@@ -9,7 +9,7 @@ export default function Home() {
     <div className="space-y-8">
       {/* Hero Section */}
       <section className="text-center space-y-4 py-12">
-        <h1 className="text-4xl font-bold">Share Your Mixes</h1>
+        <h1 className="text-4xl font-bold">🎧 Share Your Mixes</h1>
         <p className="text-gray-400 max-w-2xl mx-auto">
           From mashups to mixtapes, Music Milk is the home
           for all your creative combinations
