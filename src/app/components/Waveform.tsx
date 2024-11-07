@@ -35,13 +35,10 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
       barWidth: 2,
       height: 64,
       normalize: true,
-      // Core settings for performance
+      // Critical changes for background playback
       backend: 'WebAudio',
       mediaControls: true,
-      hideScrollbar: true,
-      // Responsive settings
-      // minPxPerSec: 1,
-      fillParent: true,
+      media: document.createElement('audio')
     });
 
     wavesurferRef.current = wavesurfer;
