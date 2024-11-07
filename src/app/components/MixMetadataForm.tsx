@@ -8,9 +8,10 @@ interface MixMetadata {
   interface MixMetadataFormProps {
     metadata: MixMetadata;
     onChange: (metadata: MixMetadata) => void;
+    disabled?: boolean;
   }
   
-  export function MixMetadataForm({ metadata, onChange }: MixMetadataFormProps) {
+  export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMetadataFormProps) {
     const handleChange = (field: keyof MixMetadata) => (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
@@ -33,7 +34,9 @@ interface MixMetadata {
               type="text"
               value={metadata.title}
               onChange={handleChange('title')}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+              disabled={disabled}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 
+                       disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Mix title"
             />
           </div>
@@ -46,7 +49,9 @@ interface MixMetadata {
               type="text"
               value={metadata.artist}
               onChange={handleChange('artist')}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+              disabled={disabled}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+                       disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Artist name"
             />
           </div>
@@ -59,7 +64,9 @@ interface MixMetadata {
               type="text"
               value={metadata.genre}
               onChange={handleChange('genre')}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+              disabled={disabled}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+                       disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="e.g., House, Techno, Ambient"
             />
           </div>
@@ -71,7 +78,9 @@ interface MixMetadata {
             <textarea
               value={metadata.description}
               onChange={handleChange('description')}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+              disabled={disabled}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+                       disabled:opacity-50 disabled:cursor-not-allowed"
               rows={4}
               placeholder="Tell us about your mix"
             />
