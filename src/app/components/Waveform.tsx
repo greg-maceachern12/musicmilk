@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause, Download } from 'lucide-react';
 
@@ -23,6 +23,34 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // Memoize event handlers
+  const handleReady = useCallback(() => {
+    if (!wavesurferRef.current) return;
+    setDuration(wavesurferRef.current.getDuration());
+    setIsLoading(false);
+    setLoadingProgress(100);
+  }, []);
+
+  const handleLoading = useCallback((progress: number) => {
+    setLoadingProgress(progress);
+  }, []);
+
+  const handleAudioProcess = useCallback(() => {
+    if (!wavesurferRef.current) return;
+    setCurrentTime(wavesurferRef.current.getCurrentTime());
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    setIsPlaying(true);
+    onPlayPause?.(true);
+  }, [onPlayPause]);
+
+  const handlePause = useCallback(() => {
+    setIsPlaying(false);
+    onPlayPause?.(false);
+  }, [onPlayPause]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -32,68 +60,74 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
       wavesurferRef.current.destroy();
     }
 
-    const wavesurfer = WaveSurfer.create({
+    // Create WaveSurfer configuration inside useEffect
+    const wavesurferConfig = {
       container: containerRef.current,
       waveColor: '#4a5568',
       progressColor: '#3b82f6',
       cursorColor: '#3b82f6',
       barWidth: 2,
       barGap: 1,
-      height: 100,
+      height: 80,
       normalize: true,
-      backend: 'MediaElement'
-    });
+      backend: 'WebAudio',
+      // Important: These settings prevent horizontal scrolling
+      fillParent: true,
+      responsive: true,
+      minPxPerSec: 1, // Minimum pixels per second
+      autoCenter: true,
+      // Other optimizations
+      partialRender: true,
+      xhr: {
+        mode: 'fetch',
+        range: true,
+        credentials: 'same-origin',
+        cache: 'force-cache'
+      }
+    };
 
+    const wavesurfer = WaveSurfer.create(wavesurferConfig);
     wavesurferRef.current = wavesurfer;
 
-    wavesurfer.on('ready', () => {
-      setDuration(wavesurfer.getDuration());
-      setIsLoading(false);
-    });
+    // Attach event listeners
+    wavesurfer.on('ready', handleReady);
+    wavesurfer.on('loading', handleLoading);
+    wavesurfer.on('audioprocess', handleAudioProcess);
+    wavesurfer.on('play', handlePlay);
+    wavesurfer.on('pause', handlePause);
 
-    wavesurfer.on('audioprocess', () => {
-      setCurrentTime(wavesurfer.getCurrentTime());
-    });
+    // Implement lazy loading
+    const loadAudio = async () => {
+      try {
+        if (audioFile) {
+          await wavesurfer.loadBlob(audioFile);
+        } else if (audioUrl) {
+          await wavesurfer.load(audioUrl);
+        }
+      } catch (error) {
+        console.error('Error loading audio:', error);
+        setIsLoading(false);
+      }
+    };
 
-    wavesurfer.on('play', () => {
-      setIsPlaying(true);
-      onPlayPause?.(true);
-    });
-
-    wavesurfer.on('pause', () => {
-      setIsPlaying(false);
-      onPlayPause?.(false);
-    });
-
-    wavesurfer.on('timeupdate', () => {
-      setCurrentTime(wavesurfer.getCurrentTime());
-    });
-
-    if (audioFile) {
-      // If we have a File object, load it directly
-      wavesurfer.loadBlob(audioFile);
-    } else if (audioUrl) {
-      // If we have a URL, load it
-      wavesurfer.load(audioUrl);
-    }
+    loadAudio();
 
     return () => {
       if (wavesurferRef.current) {
         wavesurferRef.current.destroy();
       }
     };
-  }, [audioUrl, audioFile, onPlayPause]);
+  }, [audioUrl, audioFile, handleReady, handleLoading, handleAudioProcess, handlePlay, handlePause]);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     if (wavesurferRef.current) {
       wavesurferRef.current.playPause();
     }
-  };
+  }, []);
 
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     try {
       if (audioFile) {
-        // If we have a File object, create a download link for it
         const url = URL.createObjectURL(audioFile);
         const a = document.createElement('a');
         a.href = url;
@@ -103,13 +137,11 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else if (audioUrl) {
-        // If we have a URL, fetch it and create a download
         const response = await fetch(audioUrl);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        // Extract filename from URL or use a default name
         const originalName = audioUrl.split('/').pop() || 'audio.mp3';
         const filename = `musicmilk_${originalName}`;
         a.download = filename;
@@ -121,18 +153,28 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
     } catch (error) {
       console.error('Error downloading file:', error);
     }
-  };
+  }, [audioFile, audioUrl]);
 
   return (
     <div className="space-y-4">
       {isLoading ? (
-        <div className="flex justify-center items-center h-[100px]">
-          <div className="animate-pulse text-gray-400">
-            Loading waveform...
+        <div className="flex flex-col justify-center items-center h-20">
+          <div className="w-full max-w-xs bg-gray-200 rounded-full h-2.5 mb-4">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+              style={{ width: `${loadingProgress}%` }}
+            />
+          </div>
+          <div className="text-gray-400">
+            Loading waveform... {Math.round(loadingProgress)}%
           </div>
         </div>
       ) : null}
-      <div ref={containerRef} className={`w-full ${isLoading ? 'invisible' : ''}`} />
+      
+      {/* Wrapper div to prevent overflow */}
+      <div className="w-full overflow-hidden">
+        <div ref={containerRef} className={`w-full ${isLoading ? 'invisible' : ''}`} />
+      </div>
       
       <div className="flex items-center gap-4">
         <button

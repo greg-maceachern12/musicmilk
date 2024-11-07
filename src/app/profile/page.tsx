@@ -4,7 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Music2, CalendarDays, PlayCircle } from 'lucide-react';
+import { Mail, Music2, CalendarDays, PlayCircle, Heart } from 'lucide-react';
 import { MixCard, MixCardSkeleton } from '@/app/components/MixCard';
 
 interface Mix {
@@ -20,6 +20,7 @@ interface Mix {
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [mixes, setMixes] = useState<Mix[]>([]);
+  const [likedMixes, setLikedMixes] = useState<Mix[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -37,17 +38,43 @@ export default function ProfilePage() {
 
         setUser(user);
 
-        const { data, error: mixesError } = await supabase
+        // Fetch user's mixes
+        const { data: mixesData, error: mixesError } = await supabase
           .from('mixes')
           .select('id, title, artist, genre, cover_url, play_count, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (mixesError) {
-          throw mixesError;
-        }
+        if (mixesError) throw mixesError;
+        setMixes(mixesData);
 
-        setMixes(data);
+        // Fetch liked mixes
+        const { data: likedData, error: likedError } = await supabase
+          .from('likes')
+          .select(`
+            mix_id,
+            mixes (
+              id,
+              title,
+              artist,
+              genre,
+              cover_url,
+              play_count,
+              created_at
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (likedError) throw likedError;
+        
+        // Extract the mix data from the joined query
+        const likedMixesData = likedData
+          .map(item => item.mixes)
+          .filter(mix => mix !== null) as Mix[];
+        
+        setLikedMixes(likedMixesData);
+
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load profile');
       } finally {
@@ -117,7 +144,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Mixes Section */}
+        {/* Your Mixes Section */}
         <div className="max-w-7xl mx-auto mt-12">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -165,6 +192,53 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {mixes.map((mix) => (
+                <MixCard 
+                  key={mix.id} 
+                  mix={mix}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Liked Mixes Section */}
+        <div className="max-w-7xl mx-auto mt-16">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold">Liked Mixes</h2>
+              {!isLoading && (
+                <span className="px-2.5 py-1 text-xs font-medium bg-gray-800 text-gray-300 rounded-full">
+                  {likedMixes.length} {likedMixes.length === 1 ? 'mix' : 'mixes'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <MixCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : likedMixes.length === 0 ? (
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-12 text-center">
+              <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Heart className="w-8 h-8 text-gray-500" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No liked mixes</h3>
+              <p className="text-gray-400 mb-6">
+                Find and like some mixes to add them to your collection
+              </p>
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors inline-flex items-center gap-2"
+              >
+                Discover mixes
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {likedMixes.map((mix) => (
                 <MixCard 
                   key={mix.id} 
                   mix={mix}

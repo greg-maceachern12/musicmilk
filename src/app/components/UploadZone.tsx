@@ -4,6 +4,7 @@ import { Upload, Image as ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
 import { Waveform } from './Waveform';
+import { MixMetadataForm } from './MixMetadataForm';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export function UploadZone() {
@@ -98,9 +99,9 @@ export function UploadZone() {
           genre: metadata.genre || null,
           description: metadata.description || null,
           audio_url: audioUrlData.publicUrl,
-          audio_storage_path: audioStoragePath,  // Store the storage path
+          audio_storage_path: audioStoragePath,
           cover_url: coverUrl,
-          cover_storage_path: coverStoragePath,  // Store the storage path
+          cover_storage_path: coverStoragePath,
           play_count: 0,
           user_id: user?.id || null
         })
@@ -212,64 +213,11 @@ export function UploadZone() {
 
           {/* Two Column Layout for Metadata and Cover */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Metadata Form - Takes up 2 columns */}
-            <div className="md:col-span-2 bg-gray-800 rounded-lg p-6 space-y-4">
-              <h2 className="text-xl font-bold mb-4">Mix Details</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Title*
-                  </label>
-                  <input
-                    type="text"
-                    value={metadata.title}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    placeholder="Mix title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Artist
-                  </label>
-                  <input
-                    type="text"
-                    value={metadata.artist}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, artist: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    placeholder="Artist name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Genre
-                  </label>
-                  <input
-                    type="text"
-                    value={metadata.genre}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, genre: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    placeholder="e.g., House, Techno, Ambient"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={metadata.description}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    rows={4}
-                    placeholder="Tell us about your mix"
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Metadata Form Component */}
+            <MixMetadataForm 
+              metadata={metadata}
+              onChange={setMetadata}
+            />
 
             {/* Cover Art Upload - Takes up 1 column */}
             <div className="bg-gray-800 rounded-lg p-6">
@@ -321,6 +269,7 @@ export function UploadZone() {
               </div>
             </div>
           )}
+
           {/* Upload Button */}
           <div className="flex justify-end">
             <button
@@ -334,6 +283,7 @@ export function UploadZone() {
           </div>
         </div>
       )}
+
       {/* Success Message - Always show if there's a streamUrl */}
       {streamUrl && (
         <div className="bg-gray-800 rounded-lg p-4">

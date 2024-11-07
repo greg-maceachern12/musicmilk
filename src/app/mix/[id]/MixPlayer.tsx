@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Music, User, AlertCircle } from 'lucide-react';
+import { Calendar, Music, User, AlertCircle, Heart } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Image from 'next/image';
@@ -29,83 +29,171 @@ export function MixPlayer({ id }: { id: string }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
 
+  // Set up media session metadata when mix data is loaded
   useEffect(() => {
-    // Get current user
+    if (mix && 'mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: mix.title,
+        artist: mix.artist || 'Unknown Artist',
+        album: mix.genre || 'Mix',
+        artwork: [
+          { src: mix.cover_url || '/placeholder-artwork.png', sizes: '96x96', type: 'image/jpeg' },
+          { src: mix.cover_url || '/placeholder-artwork.png', sizes: '128x128', type: 'image/jpeg' },
+          { src: mix.cover_url || '/placeholder-artwork.png', sizes: '256x256', type: 'image/jpeg' },
+          { src: mix.cover_url || '/placeholder-artwork.png', sizes: '512x512', type: 'image/jpeg' },
+        ]
+      });
+    }
+  }, [mix]);
+
+  // Fetch mix data and like counts
+  useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
 
-    async function fetchMix() {
-      const { data, error } = await supabase
+    async function fetchMixAndLikes() {
+      // Fetch mix data
+      const { data: mixData, error: mixError } = await supabase
         .from('mixes')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error('Error fetching mix:', error);
+      if (mixError) {
+        console.error('Error fetching mix:', mixError);
         return;
       }
 
-      setMix(data);
-      document.title = `${data.title} | MusicMilk`;
+      setMix(mixData);
+      document.title = `${mixData.title} | MusicMilk`;
 
-      const { error: updateError } = await supabase
+      // Update play count
+      await supabase
         .from('mixes')
-        .update({ play_count: (data.play_count || 0) + 1 })
+        .update({ play_count: (mixData.play_count || 0) + 1 })
         .eq('id', id);
 
-      if (updateError) {
-        console.error('Error updating play count:', updateError);
+      // Fetch like count
+      const { count, error: countError } = await supabase
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('mix_id', id);
+
+      if (!countError) {
+        setLikeCount(count || 0);
       }
     }
 
-    fetchMix();
+    fetchMixAndLikes();
   }, [id, supabase]);
+
+  // Check if current user has liked the mix
+  useEffect(() => {
+    async function checkLikeStatus() {
+      if (!user || !mix) return;
+
+      const { data, error } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('mix_id', mix.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!error) {
+        setIsLiked(!!data);
+      }
+    }
+
+    checkLikeStatus();
+  }, [user, mix, supabase]);
+
+  const handleLikeToggle = async () => {
+    if (!user || !mix || isLikeLoading) return;
+
+    setIsLikeLoading(true);
+    // Optimistic update
+    setIsLiked(!isLiked);
+    setLikeCount(prev => prev + (isLiked ? -1 : 1));
+
+    try {
+      if (isLiked) {
+        // Unlike
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('mix_id', mix.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('likes')
+          .insert({
+            mix_id: mix.id,
+            user_id: user.id
+          });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      console.error('Error toggling like:', error);
+      setIsLiked(!isLiked);
+      setLikeCount(prev => prev + (isLiked ? 1 : -1));
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
 
   const handleDelete = async () => {
     if (!mix || !user || isDeleting) return;
-      
+
     setIsDeleting(true);
     try {
       console.log('Deleting audio:', mix.audio_storage_path);
-      
+
       const { error: audioError } = await supabase.storage
         .from('audio')
         .remove([mix.audio_storage_path]);
-      
+
       if (audioError) {
         console.error('Error deleting audio:', audioError);
         throw audioError;
       }
-  
+
       if (mix.cover_storage_path) {
         console.log('Deleting cover:', mix.cover_storage_path);
-        
+
         const { error: coverError } = await supabase.storage
           .from('covers')
           .remove([mix.cover_storage_path]);
-        
+
         if (coverError) {
           console.error('Error deleting cover:', coverError);
         }
       }
-  
+
       const { error: dbError } = await supabase
         .from('mixes')
         .delete()
         .eq('id', mix.id)
         .eq('user_id', user.id);
-  
+
       if (dbError) {
         throw dbError;
       }
-  
+
       router.push('/');
-        
+
     } catch (error) {
       console.error('Error deleting mix:', error);
       alert('Failed to delete mix. Please try again.');
@@ -139,7 +227,7 @@ export function MixPlayer({ id }: { id: string }) {
             {/* Mix Content */}
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
               {/* Cover Art Section */}
-              <div className="w-full lg:w-60 shrink-0">
+              <div className="w-60 lg:w-60 shrink-0 mx-auto lg:mx-0">
                 <div className="aspect-square w-full rounded-xl overflow-hidden bg-gray-700 shadow-lg relative">
                   {mix.cover_url ? (
                     <Image
@@ -164,10 +252,34 @@ export function MixPlayer({ id }: { id: string }) {
                   <h1 className="text-2xl lg:text-3xl font-bold text-white leading-tight break-words">
                     {mix.title}
                   </h1>
-                  <MixMenu
-                    isOwner={isOwner}
-                    onDelete={() => setShowDeleteConfirm(true)}
-                  />
+                  <div className="flex items-center gap-2">
+                    {/* Like Button */}
+                    {/* Like Button */}
+                    <button
+                      onClick={handleLikeToggle}
+                      disabled={!user}
+                      className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user
+                          ? 'hover:bg-gray-700/50'
+                          : 'cursor-not-allowed opacity-50'
+                        }`}
+                      title={user ? 'Like' : 'Sign in to like'}
+                    >
+                      <Heart
+                        className={`w-5 h-5 transition-colors ${isLiked
+                            ? 'fill-red-500 text-red-500'
+                            : 'text-gray-400 group-hover:text-gray-300'
+                          }`}
+                      />
+                      <span className="text-sm font-medium text-gray-300">
+                        {likeCount}
+                      </span>
+                    </button>
+
+                    <MixMenu
+                      isOwner={Boolean(user && mix.user_id === user.id)}
+                      onDelete={() => setShowDeleteConfirm(true)}
+                    />
+                  </div>
                 </div>
 
                 {mix.artist && (

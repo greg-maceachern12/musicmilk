@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Link, Trash2, Flag } from 'lucide-react';
+import { MoreVertical, Link, Trash2, Flag, Pencil } from 'lucide-react';
 
 interface MixMenuProps {
   isOwner: boolean;
   onDelete: () => void;
+  onEdit?: () => void;  // Added this
 }
 
-export function MixMenu({isOwner, onDelete }: MixMenuProps) {
+export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -35,6 +36,15 @@ export function MixMenu({isOwner, onDelete }: MixMenuProps) {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else {
+      alert('Edit functionality coming soon');
+    }
+    setIsOpen(false);
   };
 
   const handleReport = () => {
@@ -64,16 +74,25 @@ export function MixMenu({isOwner, onDelete }: MixMenuProps) {
           </button>
 
           {isOwner ? (
-            <button
-              onClick={() => {
-                onDelete();
-                setIsOpen(false);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 text-red-400 hover:text-red-300 flex items-center gap-3 transition-colors border-t border-gray-700"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
+            <>
+              <button
+                onClick={handleEdit}
+                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors border-t border-gray-700"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  onDelete();
+                  setIsOpen(false);
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 text-red-400 hover:text-red-300 flex items-center gap-3 transition-colors border-t border-gray-700"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </>
           ) : (
             <button
               onClick={handleReport}
