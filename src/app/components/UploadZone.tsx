@@ -8,15 +8,28 @@ import { Waveform } from './Waveform';
 import { MixMetadataForm } from './MixMetadataForm';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
+interface Artist {
+  id: string;
+  name: string;
+  avatar_url?: string;
+}
+
+interface MixMetadata {
+  title: string;
+  artists: Artist[];
+  genre: string | null;
+  description: string | null;
+}
+
 export function UploadZone() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [metadata, setMetadata] = useState({
+  const [metadata, setMetadata] = useState<MixMetadata>({
     title: '',
-    artist: '',
-    genre: '',
-    description: ''
+    artists: [],
+    genre: null,
+    description: null
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -50,9 +63,9 @@ export function UploadZone() {
     setCoverPreview(null);
     setMetadata({
       title: '',
-      artist: '',
-      genre: '',
-      description: ''
+      artists: [],
+      genre: null,
+      description: null
     });
     setIsUploading(false);
   };
@@ -67,6 +80,7 @@ export function UploadZone() {
       const audioStoragePath = `${Date.now()}-${audioFile.name}`;
       let coverStoragePath = null;
   
+      // Upload audio file
       const { error: audioError } = await supabase.storage
         .from('audio')
         .upload(audioStoragePath, audioFile, {
@@ -104,11 +118,11 @@ export function UploadZone() {
         }
       }
   
-      const { data: mix, error: dbError } = await supabase
+      // Insert the mix record
+      const { data: mix, error: mixError } = await supabase
         .from('mixes')
         .insert({
           title: metadata.title,
-          artist: metadata.artist || null,
           genre: metadata.genre || null,
           description: metadata.description || null,
           audio_url: audioUrlData.publicUrl,
@@ -121,14 +135,31 @@ export function UploadZone() {
         .select()
         .single();
   
-      if (dbError) {
-        console.error('Database error:', dbError);
-        throw dbError;
+      if (mixError) {
+        console.error('Mix creation error:', mixError);
+        throw mixError;
+      }
+
+      // Insert mix_artists records
+      if (metadata.artists.length > 0) {
+        const mixArtistsData = metadata.artists.map(artist => ({
+          mix_id: mix.id,
+          artist_id: artist.id,
+          role: 'primary' // You could make this configurable in the UI
+        }));
+
+        const { error: mixArtistsError } = await supabase
+          .from('mix_artists')
+          .insert(mixArtistsData);
+
+        if (mixArtistsError) {
+          console.error('Mix artists association error:', mixArtistsError);
+          throw mixArtistsError;
+        }
       }
       
       // Navigate to the mix page
       router.push(`/mix/${mix.id}`);
-      
       resetForm();
   
     } catch (error) {
@@ -138,6 +169,43 @@ export function UploadZone() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleArtistSearch = async (query: string): Promise<Artist[]> => {
+    const { data, error } = await supabase
+      .from('artists')
+      .select('id, name, avatar_url')
+      .ilike('name', `%${query}%`)
+      .limit(10);
+
+    if (error) {
+      console.error('Artist search error:', error);
+      return [];
+    }
+
+    return data || [];
+  };
+
+  const handleArtistCreate = async (name: string): Promise<Artist> => {
+    const { data, error } = await supabase
+      .from('artists')
+      .insert({
+        name: name.trim(),
+        // You could add default values for other fields here if needed
+      })
+      .select('id, name, avatar_url')
+      .single();
+
+    if (error) {
+      console.error('Artist creation error:', error);
+      throw new Error('Failed to create artist');
+    }
+
+    if (!data) {
+      throw new Error('No artist data returned');
+    }
+
+    return data;
   };
 
   const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,9 +293,10 @@ export function UploadZone() {
             <MixMetadataForm 
               metadata={metadata}
               onChange={setMetadata}
+              onArtistSearch={handleArtistSearch}
+              onArtistCreate={handleArtistCreate}
               disabled={isUploading}
             />
-
             {/* Cover Art Upload - Takes up 1 column */}
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-lg font-medium mb-4">Cover Art</h3>

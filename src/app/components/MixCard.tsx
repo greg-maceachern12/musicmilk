@@ -1,24 +1,14 @@
 'use client';
-
 import { Music } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-
-interface Mix {
-  id: string;
-  title: string;
-  artist: string | null;
-  genre: string | null;
-  cover_url: string | null;
-  play_count: number;
-  created_at: string;
-}
-
-interface MixCardProps {
-  mix: Mix;
-}
+import type { Mix, MixCardProps } from '@/app/types/mix'
 
 export function MixCard({ mix }: MixCardProps) {
+  const artistDisplay = mix.mix_artists?.length 
+    ? mix.mix_artists.map(ma => ma.artists.name).join(', ')
+    : 'Unknown Artist';
+
   return (
     <Link href={`/mix/${mix.id}`}>
       <div className="bg-gray-800 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer">
@@ -42,19 +32,19 @@ export function MixCard({ mix }: MixCardProps) {
         <h3 className="font-medium truncate">{mix.title}</h3>
         <div className="flex justify-between items-center text-sm text-gray-400">
           <div className="flex flex-col">
-            <p className="truncate">by {mix.artist || 'Unknown Artist'}</p>
+            <p className="truncate">{artistDisplay}</p>
             {mix.genre && (
               <span className="text-blue-400 text-xs">{mix.genre}</span>
             )}
           </div>
-          <p>{mix.play_count} plays</p>
+          <p>{mix.play_count.toLocaleString()} plays</p>
         </div>
       </div>
     </Link>
   );
 }
 
-// Loading skeleton component for the card
+// Loading skeleton component for the card - also make sure to export it
 export function MixCardSkeleton() {
   return (
     <div className="bg-gray-800 rounded-lg p-4 space-y-3 animate-pulse">
@@ -64,3 +54,6 @@ export function MixCardSkeleton() {
     </div>
   );
 }
+
+// Also export the Mix type for reuse in other components
+export type { Mix, MixCardProps };

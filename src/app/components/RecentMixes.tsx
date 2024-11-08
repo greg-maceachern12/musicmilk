@@ -4,16 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { MixCard, MixCardSkeleton } from './MixCard';
-
-interface Mix {
-  id: string;
-  title: string;
-  artist: string | null;
-  genre: string | null;
-  cover_url: string | null;
-  play_count: number;
-  created_at: string;
-}
+import type { Mix } from '@/app/types/mix';
 
 export default function RecentMixes() {
   const [mixes, setMixes] = useState<Mix[]>([]);
@@ -26,16 +17,28 @@ export default function RecentMixes() {
     try {
       const { data, error } = await supabase
         .from('mixes')
-        .select('id, title, artist, genre, cover_url, play_count, created_at')
+        .select(`
+          id, 
+          title, 
+          genre, 
+          cover_url, 
+          play_count, 
+          created_at,
+          mix_artists!left(
+            artists(
+              id,
+              name,
+              avatar_url
+            )
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(MIXES_TO_SHOW);
 
-      if (error) {
-        throw error;
-      }
-
-      setMixes(data);
+      if (error) throw error;
+      setMixes(data || []);
     } catch (err) {
+      console.error('Error fetching mixes:', err);
       setError(err instanceof Error ? err.message : 'Failed to load mixes');
     } finally {
       setIsLoading(false);
@@ -60,7 +63,7 @@ export default function RecentMixes() {
     return (
       <div className="text-center py-8">
         <p className="text-red-400">{error}</p>
-        <button 
+        <button
           onClick={() => window.location.reload()}
           className="mt-4 px-4 py-2 bg-gray-800 rounded-md hover:bg-gray-700 transition"
         >
@@ -77,11 +80,10 @@ export default function RecentMixes() {
           <MixCard key={mix.id} mix={mix} />
         ))}
       </div>
-      
-      {/* Show More Link */}
+
       <div className="flex justify-center">
-        <Link 
-          href="/feed" 
+        <Link
+          href="/feed"
           className="px-6 py-3 text-sm bg-gray-800 rounded-md hover:bg-gray-700 transition inline-flex items-center gap-2"
         >
           Show More

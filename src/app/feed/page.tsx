@@ -4,17 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
-import { MixCard, MixCardSkeleton } from '../components/MixCard';
-
-interface Mix {
-  id: string;
-  title: string;
-  artist: string | null;
-  genre: string | null;
-  cover_url: string | null;
-  play_count: number;
-  created_at: string;
-}
+import { MixCard, MixCardSkeleton, type Mix } from '../components/MixCard';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -36,10 +26,8 @@ export default function FeedPage() {
         setIsLoadingMore(true);
       }
 
-      // Calculate the start index
       const startIndex = pageNumber * ITEMS_PER_PAGE;
-      
-      // Don't fetch if we're beyond the total count
+
       if (totalCount > 0 && startIndex >= totalCount) {
         setHasMore(false);
         setIsLoadingMore(false);
@@ -48,19 +36,35 @@ export default function FeedPage() {
 
       let query = supabase
         .from('mixes')
-        .select('id, title, artist, genre, cover_url, play_count, created_at', { count: 'exact' })
+        .select(`
+          id,
+          title,
+          genre,
+          cover_url,
+          play_count,
+          created_at,
+          mix_artists!left (
+            artists(
+              id,
+              name,
+              avatar_url
+            )
+          )
+        `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      // Add search functionality
       if (search) {
-        query = query.or(`title.ilike.%${search}%,artist.ilike.%${search}%,genre.ilike.%${search}%`);
+        query = query.or(`
+          title.ilike.%${search}%,
+          genre.ilike.%${search}%,
+          mix_artists.artists.name.ilike.%${search}%
+        `);
       }
 
       const { data, error: fetchError, count } = await query
         .range(startIndex, startIndex + ITEMS_PER_PAGE - 1);
 
       if (fetchError) {
-        // Check specifically for range error
         if (fetchError.code === '416') {
           setHasMore(false);
           setIsLoadingMore(false);
@@ -69,12 +73,10 @@ export default function FeedPage() {
         throw fetchError;
       }
 
-      // Update total count only on initial load or search
       if (isInitial && count !== null) {
         setTotalCount(count);
       }
 
-      // Handle no results
       if (!data || data.length === 0) {
         if (isInitial) {
           setMixes([]);
@@ -83,17 +85,16 @@ export default function FeedPage() {
         return;
       }
 
-      // Update mixes based on whether this is initial load or pagination
       if (isInitial) {
         setMixes(data);
       } else {
         setMixes(prevMixes => [...prevMixes, ...data]);
       }
 
-      // Update hasMore based on current data length and total count
       setHasMore(data.length === ITEMS_PER_PAGE && (!count || (startIndex + data.length) < count));
 
     } catch (err) {
+      console.error('Error fetching mixes:', err);
       setError(err instanceof Error ? err.message : 'Failed to load mixes');
     } finally {
       setIsLoading(false);
@@ -149,7 +150,7 @@ export default function FeedPage() {
     return (
       <div className="text-center py-8">
         <p className="text-red-400">{error}</p>
-        <button 
+        <button
           onClick={() => {
             setError(null);
             setPage(0);
@@ -206,7 +207,7 @@ export default function FeedPage() {
 
         {/* Infinite scroll trigger element */}
         {(hasMore || isLoadingMore) && (
-          <div 
+          <div
             ref={loaderRef}
             className="h-10 w-full flex items-center justify-center"
           >

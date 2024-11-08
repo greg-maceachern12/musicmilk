@@ -2,26 +2,10 @@
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from '@supabase/supabase-js';
-import { PostgrestError } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Music2, CalendarDays, PlayCircle, Heart } from 'lucide-react';
-import { MixCard, MixCardSkeleton } from '@/app/components/MixCard';
-
-interface Mix {
-  id: string;
-  title: string;
-  artist: string | null;
-  genre: string | null;
-  cover_url: string | null;
-  play_count: number;
-  created_at: string;
-}
-
-interface LikedMixJoin {
-  mix_id: string;
-  mixes: Mix;
-}
+import { MixCard, MixCardSkeleton, type Mix } from '@/app/components/MixCard';
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -44,17 +28,31 @@ export default function ProfilePage() {
 
         setUser(user);
 
-        // Fetch user's mixes
-        const { data: mixesData, error: mixesError } = await supabase
+        // Fetch user's mixes with artists
+        const { data: userMixes, error: mixesError } = await supabase
           .from('mixes')
-          .select('id, title, artist, genre, cover_url, play_count, created_at')
+          .select(`
+            id,
+            title,
+            genre,
+            cover_url,
+            play_count,
+            created_at,
+            mix_artists!left(
+              artists(
+                id,
+                name,
+                avatar_url
+              )
+            )
+          `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (mixesError) throw mixesError;
-        setMixes(mixesData);
+        setMixes(userMixes || []);
 
-        // Fetch liked mixes with proper typing
+        // Fetch liked mixes
         const { data: likedData, error: likedError } = await supabase
           .from('likes')
           .select(`
@@ -62,27 +60,30 @@ export default function ProfilePage() {
             mixes (
               id,
               title,
-              artist,
               genre,
               cover_url,
               play_count,
-              created_at
+              created_at,
+              mix_artists!left(
+                artists(
+                  id,
+                  name,
+                  avatar_url
+                )
+              )
             )
           `)
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }) as { 
-            data: LikedMixJoin[] | null;
-            error: PostgrestError | null;
-          };
+          .order('created_at', { ascending: false });
 
         if (likedError) throw likedError;
         
-        // Extract the mix data from the joined query
-        const likedMixesData = likedData
-          ?.filter(item => item.mixes) // Filter out any null mixes
+        // Filter out any null mixes and map to just the mix data
+        const filteredLikedMixes = likedData
+          ?.filter(item => item.mixes)
           .map(item => item.mixes) || [];
         
-        setLikedMixes(likedMixesData);
+        setLikedMixes(filteredLikedMixes);
 
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load profile');
@@ -107,7 +108,6 @@ export default function ProfilePage() {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <div className="relative">
-          {/* Background Pattern */}
           <div 
             className="absolute inset-0 h-48 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl"
             style={{
@@ -116,19 +116,16 @@ export default function ProfilePage() {
               opacity: 0.15
             }}
           />
-
-          {/* Profile Content */}
+          
           <div className="relative pt-8 px-6">
             <div className="max-w-4xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-12 mb-8">
-                {/* Avatar */}
                 <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <span className="text-3xl font-bold">
                     {user.email?.[0].toUpperCase()}
                   </span>
                 </div>
 
-                {/* User Info */}
                 <div className="flex-grow">
                   <h1 className="text-2xl font-bold mb-2">
                     {user.email?.split('@')[0]}

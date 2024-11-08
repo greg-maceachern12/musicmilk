@@ -19,7 +19,16 @@ export async function generateMetadata({
   
   const { data: mix } = await supabase
     .from('mixes')
-    .select('*')
+    .select(`
+      *,
+      mix_artists!left(
+        artists(
+          id,
+          name,
+          avatar_url
+        )
+      )
+    `)
     .eq('id', id)
     .single();
 
@@ -27,15 +36,19 @@ export async function generateMetadata({
     notFound();
   }
 
+  const artists = mix.mix_artists
+    ?.map(ma => ma.artists.name)
+    .join(', ');
+
   return {
     title: mix.title,
     description: mix.description || 'Listen to this mix on MusicMilk',
     openGraph: {
-      title: mix.title,
+      title: `${mix.title}${artists ? ` by ${artists}` : ''}`,
       description: mix.description || 'Listen to this mix on MusicMilk',
       images: [
         {
-          url: mix.cover_url || '/images/logo.png', // Using the logo from your public directory
+          url: mix.cover_url || '/images/logo.png',
           width: 1200,
           height: 630,
           alt: 'MusicMilk Logo'
@@ -46,7 +59,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: mix.title,
+      title: `${mix.title}${artists ? ` by ${artists}` : ''}`,
       description: mix.description || 'Listen to this mix on MusicMilk',
       images: [mix.cover_url || '/images/logo.png'],
     }
@@ -63,7 +76,16 @@ export default async function MixPage({
   
   const { data: mix } = await supabase
     .from('mixes')
-    .select('*')
+    .select(`
+      *,
+      mix_artists!left(
+        artists(
+          id,
+          name,
+          avatar_url
+        )
+      )
+    `)
     .eq('id', id)
     .single();
 

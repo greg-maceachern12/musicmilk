@@ -1,28 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Music, User, AlertCircle, Heart } from 'lucide-react';
+import { Calendar, Music, User, AlertCircle, Heart, X } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Waveform } from '@/app/components/Waveform';
 import { MixMenu } from '@/app/components/MixMenu';
-
-interface Mix {
-  id: string;
-  title: string;
-  artist: string | null;
-  genre: string | null;
-  description: string | null;
-  audio_url: string;
-  audio_storage_path: string;
-  cover_url: string | null;
-  cover_storage_path: string | null;
-  created_at: string;
-  play_count: number;
-  user_id: string | null;
-}
+import { MixMetadataForm } from '@/app/components/MixMetadataForm';
+import { Mix, Artist } from '@/app/components/MixCard';
 
 export function MixPlayer({ id }: { id: string }) {
   const [mix, setMix] = useState<Mix | null>(null);
@@ -32,15 +19,30 @@ export function MixPlayer({ id }: { id: string }) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    artists: [] as Artist[],
+    genre: null as string | null,
+    description: null as string | null,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+
   const supabase = createClientComponentClient();
   const router = useRouter();
 
   // Set up media session metadata when mix data is loaded
   useEffect(() => {
     if (mix && 'mediaSession' in navigator) {
+      const artistDisplay = mix.mix_artists?.length
+        ? mix.mix_artists.map(ma => ma.artists.name).join(', ')
+        : 'Unknown Artist';
+
       navigator.mediaSession.metadata = new MediaMetadata({
         title: mix.title,
-        artist: mix.artist || 'Unknown Artist',
+        artist: artistDisplay,
         album: mix.genre || 'Mix',
         artwork: [
           { src: mix.cover_url || '/placeholder-artwork.png', sizes: '96x96', type: 'image/jpeg' },
@@ -59,10 +61,18 @@ export function MixPlayer({ id }: { id: string }) {
     });
 
     async function fetchMixAndLikes() {
-      // Fetch mix data
       const { data: mixData, error: mixError } = await supabase
         .from('mixes')
-        .select('*')
+        .select(`
+          *,
+          mix_artists!left(
+            artists(
+              id,
+              name,
+              avatar_url
+            )
+          )
+        `)
         .eq('id', id)
         .single();
 
@@ -73,6 +83,7 @@ export function MixPlayer({ id }: { id: string }) {
 
       setMix(mixData);
       document.title = `${mixData.title} | MusicMilk`;
+
 
       // Update play count
       await supabase
@@ -113,6 +124,134 @@ export function MixPlayer({ id }: { id: string }) {
 
     checkLikeStatus();
   }, [user, mix, supabase]);
+
+  // Update editForm when mix data is loaded
+  useEffect(() => {
+    if (mix) {
+      setEditForm({
+        title: mix.title,
+        artists: mix.mix_artists?.map(ma => ma.artists) || [],
+        genre: mix.genre,
+        description: mix.description,
+      });
+    }
+  }, [mix]);
+
+  const handleFormChange = (newData: {
+    title: string;
+    artists: Artist[];
+    genre: string | null;
+    description: string | null;
+  }) => {
+    setEditForm(newData);
+  };
+
+  const handleSave = async () => {
+    if (!mix || !user) return;
+
+    setIsSaving(true);
+    try {
+      // Log the data being saved
+      console.log('Saving mix data:', {
+        title: editForm.title,
+        genre: editForm.genre,
+        description: editForm.description,
+      });
+
+      // Update mix details
+      const { error: mixError } = await supabase
+        .from('mixes')
+        .update({
+          title: editForm.title,
+          genre: editForm.genre,
+          description: editForm.description,
+        })
+        .eq('id', mix.id)
+        .eq('user_id', user.id);
+
+      if (mixError) {
+        console.error('Error updating mix details:', mixError);
+        throw mixError;
+      }
+
+      // Delete existing artist associations
+      const { error: deleteError } = await supabase
+        .from('mix_artists')
+        .delete()
+        .eq('mix_id', mix.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing artists:', deleteError);
+        throw deleteError;
+      }
+
+      // Insert new artist associations
+      if (editForm.artists.length > 0) {
+        const { error: insertError } = await supabase
+          .from('mix_artists')
+          .insert(
+            editForm.artists.map(artist => ({
+              mix_id: mix.id,
+              artist_id: artist.id,
+            }))
+          );
+
+        if (insertError) {
+          console.error('Error inserting new artists:', insertError);
+          throw insertError;
+        }
+      }
+
+      // Refresh mix data
+      const { data: updatedMix, error: fetchError } = await supabase
+        .from('mixes')
+        .select(`
+        *,
+        mix_artists(
+          artists(
+            id,
+            name,
+            avatar_url
+          )
+        )
+      `)
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      setMix(updatedMix);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating mix:', error);
+      alert('Failed to update mix. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+  const handleArtistSearch = async (query: string) => {
+    const { data, error } = await supabase
+      .from('artists')
+      .select('id, name, avatar_url')
+      .ilike('name', `%${query}%`)
+      .limit(5);
+
+    if (error) throw error;
+    return data || [];
+  };
+
+  const handleArtistCreate = async (name: string) => {
+    const { data, error } = await supabase
+      .from('artists')
+      .insert({ name })
+      .select('id, name, avatar_url')
+      .single();
+
+    if (error) throw error;
+    return data;
+  };
 
   const handleLikeToggle = async () => {
     if (!user || !mix || isLikeLoading) return;
@@ -252,20 +391,17 @@ export function MixPlayer({ id }: { id: string }) {
                   </h1>
                   <div className="flex items-center gap-2">
                     {/* Like Button */}
-                    {/* Like Button */}
                     <button
                       onClick={handleLikeToggle}
                       disabled={!user}
-                      className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user
-                          ? 'hover:bg-gray-700/50'
-                          : 'cursor-not-allowed opacity-50'
+                      className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user ? 'hover:bg-gray-700/50' : 'cursor-not-allowed opacity-50'
                         }`}
                       title={user ? 'Like' : 'Sign in to like'}
                     >
                       <Heart
                         className={`w-5 h-5 transition-colors ${isLiked
-                            ? 'fill-red-500 text-red-500'
-                            : 'text-gray-400 group-hover:text-gray-300'
+                          ? 'fill-red-500 text-red-500'
+                          : 'text-gray-400 group-hover:text-gray-300'
                           }`}
                       />
                       <span className="text-sm font-medium text-gray-300">
@@ -276,14 +412,21 @@ export function MixPlayer({ id }: { id: string }) {
                     <MixMenu
                       isOwner={Boolean(user && mix.user_id === user.id)}
                       onDelete={() => setShowDeleteConfirm(true)}
+                      onEdit={() => setIsEditing(true)}
+                      showEditOnMobile={false}
                     />
                   </div>
                 </div>
 
-                {mix.artist && (
+                {mix.mix_artists && mix.mix_artists.length > 0 && mix.mix_artists.some(ma => ma.artists) && (
                   <div className="flex items-center gap-2 text-gray-300 mt-5">
                     <User className="w-4 h-4" />
-                    <span className="text-lg">{mix.artist}</span>
+                    <span className="text-lg">
+                      {mix.mix_artists
+                        .filter(ma => ma.artists)
+                        .map(ma => ma.artists.name)
+                        .join(', ')}
+                    </span>
                   </div>
                 )}
 
@@ -319,6 +462,64 @@ export function MixPlayer({ id }: { id: string }) {
           </div>
         </div>
       </main>
+
+      {/* Edit Sidebar */}
+      {isEditing && (
+        <div className="fixed right-0 top-0 h-full w-96 bg-gray-900 border-l border-gray-700 overflow-hidden hidden lg:flex flex-col">
+          <div className="p-6 border-b border-gray-700">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Edit Mix</h2>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="text-gray-400 hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            <MixMetadataForm
+              metadata={{
+                title: editForm.title,
+                artists: editForm.artists,
+                genre: editForm.genre,
+                description: editForm.description
+              }}
+              onChange={handleFormChange}
+              onArtistSearch={handleArtistSearch}
+              onArtistCreate={handleArtistCreate}
+              disabled={isSaving}
+            />
+          </div>
+
+          <div className="p-6 border-t border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 text-sm font-medium bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Modal */}
       {showDeleteConfirm && (

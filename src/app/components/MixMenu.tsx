@@ -1,3 +1,4 @@
+// MixMenu.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -6,10 +7,16 @@ import { MoreVertical, Link, Trash2, Flag, Pencil } from 'lucide-react';
 interface MixMenuProps {
   isOwner: boolean;
   onDelete: () => void;
-  onEdit?: () => void;  // Added this
+  onEdit?: () => void;
+  showEditOnMobile?: boolean;
 }
 
-export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
+export function MixMenu({ 
+  isOwner, 
+  onDelete, 
+  onEdit,
+  showEditOnMobile = true 
+}: MixMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,14 +48,11 @@ export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
   const handleEdit = () => {
     if (onEdit) {
       onEdit();
-    } else {
-      alert('Edit functionality coming soon');
+      setIsOpen(false);
     }
-    setIsOpen(false);
   };
 
   const handleReport = () => {
-    // TODO: Implement report functionality
     alert('Report functionality coming soon');
     setIsOpen(false);
   };
@@ -64,7 +68,7 @@ export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1 w-56 bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden">
+        <div className="absolute right-0 mt-1 w-56 bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden z-50">
           <button
             onClick={handleCopy}
             className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors"
@@ -75,13 +79,15 @@ export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
 
           {isOwner ? (
             <>
-              <button
-                onClick={handleEdit}
-                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors border-t border-gray-700"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit
-              </button>
+              {onEdit && (showEditOnMobile ? true : 'lg:block hidden') && (
+                <button
+                  onClick={handleEdit}
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors border-t border-gray-700"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </button>
+              )}
               <button
                 onClick={() => {
                   onDelete();
