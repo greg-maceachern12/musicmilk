@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Waveform } from './Waveform';
 import { MixMetadataForm } from './MixMetadataForm';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export function UploadZone() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -21,7 +20,6 @@ export function UploadZone() {
 
   const [isUploading, setIsUploading] = useState(false);
   
-  const supabase = createClientComponentClient();
   const router = useRouter();
 
   // Extract title from audio file
@@ -62,73 +60,42 @@ export function UploadZone() {
   
     setIsUploading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-  
-      const audioStoragePath = `${Date.now()}-${audioFile.name}`;
-      let coverStoragePath = null;
-  
-      const { error: audioError } = await supabase.storage
-        .from('audio')
-        .upload(audioStoragePath, audioFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-  
-      if (audioError) {
-        console.error('Audio upload error:', audioError);
-        throw audioError;
-      }
-  
-      const { data: audioUrlData } = supabase.storage
-        .from('audio')
-        .getPublicUrl(audioStoragePath);
-  
-      // Handle cover image upload if provided
-      let coverUrl = null;
-      if (coverImage) {
-        coverStoragePath = `${Date.now()}-${coverImage.name}`;
-        const { error: coverError } = await supabase.storage
-          .from('covers')
-          .upload(coverStoragePath, coverImage, {
-            cacheControl: '3600',
-            upsert: false
-          });
-  
-        if (coverError) {
-          console.error('Cover upload error:', coverError);
-        } else {
-          const { data: coverUrlData } = supabase.storage
-            .from('covers')
-            .getPublicUrl(coverStoragePath);
-          coverUrl = coverUrlData.publicUrl;
-        }
-      }
-  
-      const { data: mix, error: dbError } = await supabase
-        .from('mixes')
-        .insert({
+      // Convert files to base64 for sending to API
+      const audioData = await fileToBase64(audioFile);
+      const coverData = coverImage ? await fileToBase64(coverImage) : null;
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          audioFile: {
+            name: audioFile.name,
+            type: audioFile.type,
+            data: audioData
+          },
+          coverImage: coverImage ? {
+            name: coverImage.name,
+            type: coverImage.type,
+            data: coverData
+          } : null,
           title: metadata.title,
-          artist: metadata.artist || null,
-          genre: metadata.genre || null,
-          description: metadata.description || null,
-          audio_url: audioUrlData.publicUrl,
-          audio_storage_path: audioStoragePath,
-          cover_url: coverUrl,
-          cover_storage_path: coverStoragePath,
-          play_count: 0,
-          user_id: user?.id || null
-        })
-        .select()
-        .single();
-  
-      if (dbError) {
-        console.error('Database error:', dbError);
-        throw dbError;
+          artist: metadata.artist,
+          genre: metadata.genre,
+          description: metadata.description
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
       }
+
+      const { mix } = await response.json();
       
       // Navigate to the mix page
       router.push(`/mix/${mix.id}`);
-      
       resetForm();
   
     } catch (error) {
@@ -138,6 +105,15 @@ export function UploadZone() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   };
 
   const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,7 +204,7 @@ export function UploadZone() {
               disabled={isUploading}
             />
 
-            {/* Cover Art Upload - Takes up 1 column */}
+            {/* Cover Art Upload */}
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-lg font-medium mb-4">Cover Art</h3>
               {coverPreview ? (
@@ -265,7 +241,7 @@ export function UploadZone() {
             </div>
           </div>
 
-          {/* Upload Progress Spinner */}
+          {/* Upload Progress */}
           {isUploading && (
             <div className="bg-gray-800 rounded-lg p-4">
               <div className="flex items-center justify-center gap-3">

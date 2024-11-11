@@ -156,47 +156,42 @@ export function MixPlayer({ id }: { id: string }) {
 
   const handleDelete = async () => {
     if (!mix || !user || isDeleting) return;
-
+  
     setIsDeleting(true);
     try {
-      console.log('Deleting audio:', mix.audio_storage_path);
-
-      const { error: audioError } = await supabase.storage
-        .from('audio')
-        .remove([mix.audio_storage_path]);
-
-      if (audioError) {
-        console.error('Error deleting audio:', audioError);
-        throw audioError;
+      const deleteResponse = await fetch('/api/delete-files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          audioUrl: mix.audio_url,
+          coverUrl: mix.cover_url,
+          mixId: mix.id
+        }),
+      });
+  
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.json();
+        throw new Error(error.error || 'Failed to delete files');
       }
-
-      if (mix.cover_storage_path) {
-        console.log('Deleting cover:', mix.cover_storage_path);
-
-        const { error: coverError } = await supabase.storage
-          .from('covers')
-          .remove([mix.cover_storage_path]);
-
-        if (coverError) {
-          console.error('Error deleting cover:', coverError);
-        }
-      }
-
+  
+      // If files are deleted successfully, delete the database record
       const { error: dbError } = await supabase
         .from('mixes')
         .delete()
         .eq('id', mix.id)
         .eq('user_id', user.id);
-
+  
       if (dbError) {
         throw dbError;
       }
-
+  
       router.push('/');
-
+  
     } catch (error) {
       console.error('Error deleting mix:', error);
-      alert('Failed to delete mix. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to delete mix. Please try again.');
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -257,15 +252,15 @@ export function MixPlayer({ id }: { id: string }) {
                       onClick={handleLikeToggle}
                       disabled={!user}
                       className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user
-                          ? 'hover:bg-gray-700/50'
-                          : 'cursor-not-allowed opacity-50'
+                        ? 'hover:bg-gray-700/50'
+                        : 'cursor-not-allowed opacity-50'
                         }`}
                       title={user ? 'Like' : 'Sign in to like'}
                     >
                       <Heart
                         className={`w-5 h-5 transition-colors ${isLiked
-                            ? 'fill-red-500 text-red-500'
-                            : 'text-gray-400 group-hover:text-gray-300'
+                          ? 'fill-red-500 text-red-500'
+                          : 'text-gray-400 group-hover:text-gray-300'
                           }`}
                       />
                       <span className="text-sm font-medium text-gray-300">
