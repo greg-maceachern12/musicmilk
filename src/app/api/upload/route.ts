@@ -3,6 +3,14 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb' // Adjust this value based on your needs
+    }
+  }
+};
+
 interface FileData {
   name: string;
   type: string;
