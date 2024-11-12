@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { MessageCircle, CheckCircle2, AlertCircle, X, HelpCircle } from 'lucide-react';
 
-// Define types for the form data
 interface FeedbackFormData {
   'form-name': string;
   message: string;
-  [key: string]: string; // Allow for additional string key-value pairs
+  'bot-field'?: string;
+  [key: string]: string | undefined;
 }
 
 const FloatingFeedback: React.FC = () => {
@@ -19,7 +19,7 @@ const FloatingFeedback: React.FC = () => {
 
   const encode = (data: FeedbackFormData): string => {
     return Object.keys(data)
-      .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+      .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key] || ''))
       .join("&");
   };
 
@@ -40,9 +40,23 @@ const FloatingFeedback: React.FC = () => {
     };
 
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode - Form data:', formData);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setShowSuccess(true);
+        setMessage('');
+        setTimeout(() => {
+          setShowSuccess(false);
+          setIsOpen(false);
+        }, 3000);
+        return;
+      }
+
       const response = await fetch('/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded' 
+        },
         body: encode(formData)
       });
 
@@ -57,7 +71,7 @@ const FloatingFeedback: React.FC = () => {
         setIsOpen(false);
       }, 3000);
     } catch (err) {
-      setError(`Failed to submit feedback. Please try again: ${err instanceof Error ? err.message : String(err)}`);
+      setError(`Failed to submit feedback: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -65,20 +79,14 @@ const FloatingFeedback: React.FC = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {/* Floating button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="bg-indigo-500 text-white rounded-full p-3 shadow-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         aria-label={isOpen ? 'Close feedback form' : 'Open feedback form'}
       >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <HelpCircle className="w-6 h-6" />
-        )}
+        {isOpen ? <X className="w-6 h-6" /> : <HelpCircle className="w-6 h-6" />}
       </button>
 
-      {/* Feedback form panel */}
       <div className={`absolute bottom-16 right-0 transition-all duration-200 ease-in-out transform ${
         isOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
       }`}>
@@ -86,13 +94,20 @@ const FloatingFeedback: React.FC = () => {
           <div className="p-4">
             <form
               onSubmit={handleSubmit}
-              className="space-y-4"
               name="feedback"
-              method="post"
+              method="POST"
               data-netlify="true"
+              data-netlify-honeypot="bot-field"
             >
-              <input type="hidden" name="feedback" value="feedback" />
+              <input type="hidden" name="form-name" value="feedback" />
               
+              {/* Honeypot field */}
+              <p className="hidden">
+                <label>
+                  Don&apos;t fill this out if you&apos;re human: <input name="bot-field" />
+                </label>
+              </p>
+
               <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg p-2 shadow-sm">
                 <MessageCircle className="w-5 h-5 text-indigo-500 flex-shrink-0" />
                 <input
@@ -108,23 +123,27 @@ const FloatingFeedback: React.FC = () => {
               
               <button
                 type="submit"
-                className="w-full bg-indigo-500 text-white rounded-md px-3 py-2 text-sm font-medium hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-indigo-500 text-white rounded-md px-3 py-2 text-sm font-medium hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Sending...' : 'Send Feedback'}
               </button>
 
               {error && (
-                <div className="flex items-center space-x-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-center space-x-2 p-2 mt-2 bg-red-50 border border-red-200 rounded-md">
                   <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                   <p className="text-sm text-red-600">{error}</p>
                 </div>
               )}
 
               {showSuccess && (
-                <div className="flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-center space-x-2 p-2 mt-2 bg-green-50 border border-green-200 rounded-md">
                   <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <p className="text-sm text-green-600">Thank you for your feedback!</p>
+                  <p className="text-sm text-green-600">
+                    {process.env.NODE_ENV === 'development' 
+                      ? 'Form submitted (Development Mode)'
+                      : 'Thank you for your feedback!'}
+                  </p>
                 </div>
               )}
             </form>
