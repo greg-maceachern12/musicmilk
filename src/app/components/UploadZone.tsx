@@ -113,7 +113,7 @@ export function UploadZone() {
           const text = await response.text();
           errorMessage = `Upload failed (${response.status}): ${text}`;
           console.error('Failed to parse error response:', text);
-          console.log(parseError);
+          console.log(parseError)
         }
         throw new Error(errorMessage);
       }
@@ -124,7 +124,6 @@ export function UploadZone() {
       // Navigate to the mix page
       router.push(`/mix/${mix.id}`);
       resetForm();
-  
     } catch (error) {
       console.error('Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
