@@ -3,7 +3,7 @@ import Script from 'next/script';
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
-//import FeedbackForm from "./components/FeedbackForm";
+import FeedbackForm from "./components/FeedbackForm";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -48,7 +48,7 @@ export default function RootLayout({
         <main className="container mx-auto px-4 py-8">
           {children}
         </main>
-        {/* <FeedbackForm /> */}
+        <FeedbackForm />
       </body>
     </html>
   );
