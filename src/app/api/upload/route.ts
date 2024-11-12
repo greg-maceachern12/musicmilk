@@ -22,8 +22,8 @@ const blobServiceClient = BlobServiceClient.fromConnectionString(
   process.env.AZURE_STORAGE_CONNECTION_STRING!
 );
 
-const AUDIO_CONTAINER = 'audio-mixes';
-const COVER_CONTAINER = 'cover-images';
+const AUDIO_CONTAINER = 'audio';
+const COVER_CONTAINER = 'covers';
 
 async function uploadToAzure(
   file: FileData,
