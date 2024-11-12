@@ -3,7 +3,7 @@ import Script from 'next/script';
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
-import FeedbackForm from "./components/FeedbackForm";
+// import FeedbackForm from "./components/FeedbackForm";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,15 +45,15 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-gray-900 text-white`}>
         {/* Hidden Netlify Form */}
-        <form name="feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
+        {/* <form name="feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
           <input type="text" name="message" />
-        </form>
+        </form> */}
         
         <Navigation />
         <main className="container mx-auto px-4 py-8">
           {children}
         </main>
-        <FeedbackForm />
+        {/* <FeedbackForm /> */}
       </body>
     </html>
   );
