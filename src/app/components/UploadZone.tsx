@@ -60,39 +60,66 @@ export function UploadZone() {
   
     setIsUploading(true);
     try {
+      console.log('Starting upload:', {
+        fileName: audioFile.name,
+        fileSize: `${(audioFile.size / (1024 * 1024)).toFixed(2)}MB`,
+        type: audioFile.type
+      });
+
       // Convert files to base64 for sending to API
       const audioData = await fileToBase64(audioFile);
       const coverData = coverImage ? await fileToBase64(coverImage) : null;
+
+      const requestBody = {
+        audioFile: {
+          name: audioFile.name,
+          type: audioFile.type,
+          data: audioData
+        },
+        coverImage: coverImage ? {
+          name: coverImage.name,
+          type: coverImage.type,
+          data: coverData
+        } : null,
+        title: metadata.title,
+        artist: metadata.artist,
+        genre: metadata.genre,
+        description: metadata.description
+      };
+
+      console.log('Sending request to /api/upload');
 
       const response = await fetch('/api/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          audioFile: {
-            name: audioFile.name,
-            type: audioFile.type,
-            data: audioData
-          },
-          coverImage: coverImage ? {
-            name: coverImage.name,
-            type: coverImage.type,
-            data: coverData
-          } : null,
-          title: metadata.title,
-          artist: metadata.artist,
-          genre: metadata.genre,
-          description: metadata.description
-        }),
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers)
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || 'Upload failed';
+          console.error('Error response:', errorData);
+        } catch (parseError) {
+          const text = await response.text();
+          errorMessage = `Upload failed (${response.status}): ${text}`;
+          console.error('Failed to parse error response:', text);
+          console.log(parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const { mix } = await response.json();
+      console.log('Upload successful:', mix);
       
       // Navigate to the mix page
       router.push(`/mix/${mix.id}`);
