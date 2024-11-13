@@ -4,6 +4,7 @@ import { Music } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { fadeIn, fadeInUp, cardHover, defaultTransition } from '@/lib/animations';
 
 interface Mix {
   id: string;
@@ -19,33 +20,24 @@ interface MixCardProps {
   mix: Mix;
 }
 
-const genreVariants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { 
-    opacity: 1, 
-    y: 0,
-    transition: {
-      delay: 0.2,
-      duration: 0.3
-    }
-  }
-};
-
 export function MixCard({ mix }: MixCardProps) {
   return (
     <Link href={`/mix/${mix.id}`}>
       <motion.div 
         className="bg-gray-800 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer"
+        variants={cardHover}
+        whileHover="hover"
+        whileTap="tap"
       >
         {/* Cover Image */}
         <div className="relative w-full h-48 bg-gray-700 rounded-md overflow-hidden">
           {mix.cover_url ? (
             <motion.div
               className="relative w-full h-full"
-              whileHover={{ 
-                scale: 1.05,
-                transition: { duration: 0.4, ease: "easeOut" }
-              }}
+              variants={cardHover}
+              initial="initial"
+              whileHover="hover"
+              transition={defaultTransition}
             >
               <Image
                 src={mix.cover_url}
@@ -57,14 +49,10 @@ export function MixCard({ mix }: MixCardProps) {
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <motion.div
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                }}
-                transition={{ 
-                  duration: 0.5,
-                  delay: 0.2,
-                  ease: "easeOut" 
-                }}
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+                transition={{ ...defaultTransition, delay: 0.2 }}
               >
                 <Music className="w-12 h-12 text-gray-600" />
               </motion.div>
@@ -73,7 +61,12 @@ export function MixCard({ mix }: MixCardProps) {
         </div>
 
         {/* Mix Info */}
-        <div>
+        <motion.div
+          variants={fadeInUp}
+          initial="initial"
+          animate="animate"
+          transition={defaultTransition}
+        >
           <h3 className="font-medium truncate">
             {mix.title}
           </h3>
@@ -85,23 +78,25 @@ export function MixCard({ mix }: MixCardProps) {
               {mix.genre && (
                 <motion.span 
                   className="text-blue-400 text-xs"
-                  variants={genreVariants}
+                  variants={fadeInUp}
                   initial="initial"
                   animate="animate"
+                  transition={{ ...defaultTransition, delay: 0.2 }}
                 >
                   {mix.genre}
                 </motion.span>
               )}
             </div>
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              variants={fadeIn}
+              initial="initial"
+              animate="animate"
+              transition={{ ...defaultTransition, delay: 0.3 }}
             >
               {mix.play_count} plays
             </motion.p>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </Link>
   );
@@ -112,14 +107,10 @@ export function MixCardSkeleton() {
   return (
     <motion.div 
       className="bg-gray-800 rounded-lg p-4 space-y-3"
-      initial={{ opacity: 0 }}
-      animate={{ 
-        opacity: 1,
-        transition: {
-          duration: 0.4,
-          ease: "easeOut"
-        }
-      }}
+      variants={fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={defaultTransition}
     >
       <motion.div
         className="bg-gray-700 h-48 rounded-md"

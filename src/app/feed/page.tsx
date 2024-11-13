@@ -1,10 +1,20 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
 import { MixCard, MixCardSkeleton } from '../components/MixCard';
+import {
+  fadeIn,
+  fadeInDown,
+  fadeInUp,
+  listContainer,
+  pageTransition,
+  defaultTransition,
+  cardTransition
+} from '@/lib/animations';
 
 interface Mix {
   id: string;
@@ -17,6 +27,7 @@ interface Mix {
 }
 
 const ITEMS_PER_PAGE = 12;
+
 
 export default function FeedPage() {
   const [mixes, setMixes] = useState<Mix[]>([]);
@@ -164,15 +175,30 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="space-y-8 min-h-screen">
+    <motion.div 
+      className="space-y-8 min-h-screen"
+      {...pageTransition}
+    >
       {/* Header */}
-      <div className="text-center space-y-4 py-8">
+      <motion.div 
+        className="text-center space-y-4 py-8"
+        variants={fadeInDown}
+        initial="initial"
+        animate="animate"
+        transition={defaultTransition}
+      >
         <h1 className="text-4xl font-bold">Explore Mixes</h1>
         <p className="text-gray-400">Discover amazing music combinations from our community</p>
-      </div>
+      </motion.div>
 
       {/* Search Bar */}
-      <div className="max-w-2xl mx-auto px-4">
+      <motion.div 
+        className="max-w-2xl mx-auto px-4"
+        variants={fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={{ ...defaultTransition, delay: 0.2 }}
+      >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -182,7 +208,7 @@ export default function FeedPage() {
             className="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Mixes Grid */}
       <div className="space-y-6 px-4">
@@ -193,29 +219,47 @@ export default function FeedPage() {
             ))}
           </div>
         ) : mixes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={listContainer}
+            initial="initial"
+            animate="animate"
+          >
             {mixes.map((mix) => (
-              <MixCard key={mix.id} mix={mix} />
+              <motion.div
+                key={mix.id}
+                {...cardTransition}
+              >
+                <MixCard mix={mix} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
-          <div className="text-center py-8">
+          <motion.div 
+            className="text-center py-8"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+          >
             <p className="text-gray-400">No mixes found{searchQuery ? ' for your search' : ''}.</p>
-          </div>
+          </motion.div>
         )}
 
-        {/* Infinite scroll trigger element */}
+        {/* Infinite scroll loader */}
         {(hasMore || isLoadingMore) && (
-          <div 
-            ref={loaderRef}
-            className="h-10 w-full flex items-center justify-center"
-          >
+          <div ref={loaderRef} className="h-10 w-full flex items-center justify-center">
             {isLoadingMore && (
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+              <motion.div 
+                className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              />
             )}
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
+

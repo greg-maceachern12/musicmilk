@@ -9,6 +9,14 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MixMenu } from '@/app/components/MixMenu';
 import { useAudio } from '@/app/contexts/AudioContext';
+import {
+  fadeIn,
+  fadeInUp,
+  scaleIn,
+  cardHover,
+  defaultTransition,
+  quickTransition
+} from '@/lib/animations';
 
 interface Mix {
   id: string;
@@ -24,18 +32,6 @@ interface Mix {
   play_count: number;
   user_id: string | null;
 }
-
-const fadeIn = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 }
-};
-
-const scaleIn = {
-  initial: { scale: 0.95, opacity: 0 },
-  animate: { scale: 1, opacity: 1 },
-  exit: { scale: 0.95, opacity: 0 }
-};
 
 async function extractColors(imageSrc: string): Promise<string[]> {
   try {
@@ -339,8 +335,10 @@ export function MixPlayer({ id }: { id: string }) {
     return (
       <motion.div
         className="min-h-64 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center"
-        {...fadeIn}
-        transition={{ duration: 0.3 }}
+        variants={fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={quickTransition}
       >
         <div className="animate-pulse text-gray-400">Loading mix...</div>
       </motion.div>
@@ -353,12 +351,14 @@ export function MixPlayer({ id }: { id: string }) {
     day: 'numeric'
   });
 
+  // Return statement for MixPlayer.tsx
   return (
     <motion.div
       className="relative"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+      variants={fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={defaultTransition}
     >
       {/* Base dark background */}
       <div className="fixed inset-0 -z-20 bg-black" />
@@ -369,14 +369,14 @@ export function MixPlayer({ id }: { id: string }) {
         initial={false}
         animate={{
           background: `
-            linear-gradient(
-              150deg,
-              ${backgroundColors[0]} 0%,
-              ${backgroundColors[1]} 25%,
-              ${backgroundColors[2]} 50%,
-              ${backgroundColors[3]} 100%
-            )
-          `
+          linear-gradient(
+            150deg,
+            ${backgroundColors[0]} 0%,
+            ${backgroundColors[1]} 25%,
+            ${backgroundColors[2]} 50%,
+            ${backgroundColors[3]} 100%
+          )
+        `
         }}
         transition={{ duration: 0.8 }}
       />
@@ -387,12 +387,12 @@ export function MixPlayer({ id }: { id: string }) {
         initial={false}
         animate={{
           background: `
-            radial-gradient(circle at 50% 0%, 
-              ${backgroundColors[0]}00, 
-              ${backgroundColors[1]}40 40%, 
-              ${backgroundColors[2]}80 80%
-            )
-          `
+          radial-gradient(circle at 50% 0%, 
+            ${backgroundColors[0]}00, 
+            ${backgroundColors[1]}40 40%, 
+            ${backgroundColors[2]}80 80%
+          )
+        `
         }}
         transition={{ duration: 0.8 }}
       />
@@ -418,15 +418,16 @@ export function MixPlayer({ id }: { id: string }) {
             variants={scaleIn}
             initial="initial"
             animate="animate"
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ ...defaultTransition, delay: 0.1 }}
           >
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
               {/* Cover Art Section */}
               <motion.div
                 className="w-56 lg:w-60 mx-auto lg:mx-0 shrink-0"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                variants={scaleIn}
+                initial="initial"
+                animate="animate"
+                transition={{ ...defaultTransition, delay: 0.2 }}
               >
                 <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/50 shadow-lg relative">
                   {mix.cover_url ? (
@@ -452,15 +453,17 @@ export function MixPlayer({ id }: { id: string }) {
                 <div className="flex flex-col gap-4">
                   <motion.div
                     className="flex items-start gap-4"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
+                    variants={fadeInUp}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ ...defaultTransition, delay: 0.3 }}
                   >
                     <motion.button
                       onClick={handlePlayPause}
                       className="shrink-0 w-12 h-12 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-full shadow-lg transition-all"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      variants={cardHover}
+                      whileHover="hover"
+                      whileTap="tap"
                       aria-label={isPlaying ? 'Pause' : 'Play'}
                     >
                       {isPlaying ? (
@@ -473,26 +476,25 @@ export function MixPlayer({ id }: { id: string }) {
                     <div className="flex-1 flex items-start justify-between gap-4 min-w-0">
                       <motion.h1
                         className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight break-words"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.4 }}
+                        variants={fadeInUp}
+                        transition={{ ...defaultTransition, delay: 0.4 }}
                       >
                         {mix.title}
                       </motion.h1>
 
                       <motion.div
                         className="flex items-center gap-1"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3, delay: 0.5 }}
+                        variants={fadeIn}
+                        transition={{ ...defaultTransition, delay: 0.5 }}
                       >
                         <motion.button
                           onClick={handleLikeToggle}
                           disabled={!user}
                           className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user ? 'hover:bg-white/10' : 'cursor-not-allowed opacity-50'
                             }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          variants={cardHover}
+                          whileHover="hover"
+                          whileTap="tap"
                           title={user ? 'Like' : 'Sign in to like'}
                         >
                           <Heart
@@ -526,9 +528,10 @@ export function MixPlayer({ id }: { id: string }) {
                   {mix.artist && (
                     <motion.div
                       className="flex items-center gap-2 text-gray-300"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
+                      variants={fadeInUp}
+                      initial="initial"
+                      animate="animate"
+                      transition={{ ...defaultTransition, delay: 0.5 }}
                     >
                       <User className="w-4 h-4" />
                       <span className="text-base sm:text-lg">{mix.artist}</span>
@@ -540,13 +543,15 @@ export function MixPlayer({ id }: { id: string }) {
                 {mix.genre && (
                   <motion.div
                     className="flex flex-wrap gap-2 mt-5"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.6 }}
+                    variants={fadeInUp}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ ...defaultTransition, delay: 0.6 }}
                   >
                     <motion.span
                       className="bg-white/10 backdrop-blur-sm text-white/90 px-3 py-1 rounded-full text-sm font-medium"
-                      whileHover={{ scale: 1.05 }}
+                      variants={cardHover}
+                      whileHover="hover"
                     >
                       {mix.genre}
                     </motion.span>
@@ -556,9 +561,10 @@ export function MixPlayer({ id }: { id: string }) {
                 {/* Metadata */}
                 <motion.div
                   className="flex flex-wrap items-center gap-3 text-gray-400 mt-5"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.7 }}
+                  variants={fadeInUp}
+                  initial="initial"
+                  animate="animate"
+                  transition={{ ...defaultTransition, delay: 0.7 }}
                 >
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -572,9 +578,10 @@ export function MixPlayer({ id }: { id: string }) {
                 {mix.description && (
                   <motion.p
                     className="text-gray-300 text-sm leading-relaxed mt-5 lg:max-w-2xl"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.8 }}
+                    variants={fadeInUp}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ ...defaultTransition, delay: 0.8 }}
                   >
                     {mix.description}
                   </motion.p>
@@ -590,16 +597,18 @@ export function MixPlayer({ id }: { id: string }) {
         {showDeleteConfirm && (
           <motion.div
             className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            variants={fadeIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             <motion.div
               className="bg-black/60 backdrop-blur-xl rounded-xl p-4 sm:p-6 w-full max-w-sm mx-auto border border-white/10"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 400 }}
+              variants={scaleIn}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={defaultTransition}
             >
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
@@ -615,8 +624,9 @@ export function MixPlayer({ id }: { id: string }) {
                 <motion.button
                   onClick={() => setShowDeleteConfirm(false)}
                   className="w-full px-4 py-2.5 text-sm font-medium bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm text-white"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  variants={cardHover}
+                  whileHover="hover"
+                  whileTap="tap"
                   disabled={isDeleting}
                 >
                   Cancel
@@ -624,8 +634,9 @@ export function MixPlayer({ id }: { id: string }) {
                 <motion.button
                   onClick={handleDelete}
                   className="w-full px-4 py-2.5 text-sm font-medium bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm text-white"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  variants={cardHover}
+                  whileHover="hover"
+                  whileTap="tap"
                   disabled={isDeleting}
                 >
                   {isDeleting ? 'Deleting...' : 'Delete'}
