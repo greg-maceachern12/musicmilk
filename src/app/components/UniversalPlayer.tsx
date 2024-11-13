@@ -30,7 +30,7 @@ export function UniversalPlayer() {
       {/* Fixed Player with glass morphism effect and gradient */}
       <div className="fixed bottom-0 left-0 right-0 h-24">
         {/* Gradient background overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/95 to-gray-900/80 backdrop-blur-xl border-t border-gray-800/50 shadow-2xl" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/30 to-gray-900/50 backdrop-blur-xl border-t border-gray-800/50 shadow-2xl" />
         
         <div className="container mx-auto h-full relative z-10">
           <div className="flex items-center h-full px-4 lg:px-6 gap-4 lg:gap-6">
