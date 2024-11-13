@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Link, Trash2, Flag, Pencil } from 'lucide-react';
+import { MoreVertical, Link, Trash2, Flag, Pencil, Download } from 'lucide-react';
 
 interface MixMenuProps {
   isOwner: boolean;
   onDelete: () => void;
-  onEdit?: () => void;  // Added this
+  onEdit?: () => void;
+  audioUrl: string;
+  mixTitle: string;
 }
 
-export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
+export function MixMenu({ isOwner, onDelete, onEdit, audioUrl, mixTitle }: MixMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -35,6 +37,26 @@ export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
       }, 1000);
     } catch (err) {
       console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(audioUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const originalName = audioUrl.split('/').pop() || 'audio.mp3';
+      a.download = `musicmilk_${mixTitle}_${originalName}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download the mix. Please try again.');
     }
   };
 
@@ -64,13 +86,21 @@ export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1 w-56 bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden">
+        <div className="absolute right-0 mt-1 w-56 bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden z-10">
           <button
             onClick={handleCopy}
             className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors"
           >
             <Link className="w-4 h-4" />
             {copied ? 'Copied!' : 'Copy link'}
+          </button>
+
+          <button
+            onClick={handleDownload}
+            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors border-t border-gray-700"
+          >
+            <Download className="w-4 h-4" />
+            Download mix
           </button>
 
           {isOwner ? (

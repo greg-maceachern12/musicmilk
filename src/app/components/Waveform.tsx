@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause, Download } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
+import { useAudio } from '../contexts/AudioContext';
 
 interface WaveformProps {
   audioUrl?: string;
   audioFile?: File;
-  onPlayPause?: (isPlaying: boolean) => void;
+  onWavesurferInit?: (wavesurfer: WaveSurfer) => void; // Added this prop
 }
 
 const formatTime = (seconds: number): string => {
@@ -16,13 +17,15 @@ const formatTime = (seconds: number): string => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
+export function Waveform({ audioUrl, audioFile, onWavesurferInit }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
+  const { state, dispatch } = useAudio();
+  const { isPlaying } = state;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -35,7 +38,6 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
       barWidth: 2,
       height: 64,
       normalize: true,
-      // Critical changes for background playback
       backend: 'WebAudio',
       mediaControls: true,
       media: document.createElement('audio')
@@ -43,7 +45,11 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
 
     wavesurferRef.current = wavesurfer;
 
-    // Basic event handlers
+    // Call the onWavesurferInit callback if provided
+    if (onWavesurferInit) {
+      onWavesurferInit(wavesurfer);
+    }
+
     wavesurfer.on('ready', () => {
       setDuration(wavesurfer.getDuration());
       setIsLoading(false);
@@ -54,13 +60,13 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
     });
 
     wavesurfer.on('play', () => {
-      setIsPlaying(true);
-      onPlayPause?.(true);
+      setIsInternalPlayChange(true);
+      dispatch({ type: 'PLAY_MIX', payload: state.currentMix! });
     });
 
     wavesurfer.on('pause', () => {
-      setIsPlaying(false);
-      onPlayPause?.(false);
+      setIsInternalPlayChange(true);
+      dispatch({ type: 'STOP' });
     });
 
     // Load audio
@@ -70,44 +76,31 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
       wavesurfer.load(audioUrl);
     }
 
-    // Cleanup
     return () => {
       wavesurfer.destroy();
     };
-  }, [audioUrl, audioFile, onPlayPause]);
+  }, [audioUrl, audioFile, dispatch, state.currentMix, onWavesurferInit]);
+
+  // Sync wavesurfer with global play state only when it's not an internal change
+  useEffect(() => {
+    if (!wavesurferRef.current || isInternalPlayChange) {
+      setIsInternalPlayChange(false);
+      return;
+    }
+
+    const shouldPlay = isPlaying && !wavesurferRef.current.isPlaying();
+    const shouldPause = !isPlaying && wavesurferRef.current.isPlaying();
+
+    if (shouldPlay) {
+      wavesurferRef.current.play();
+    } else if (shouldPause) {
+      wavesurferRef.current.pause();
+    }
+  }, [isPlaying, isInternalPlayChange]);
 
   const togglePlayPause = () => {
     if (wavesurferRef.current) {
       wavesurferRef.current.playPause();
-    }
-  };
-
-  const handleDownload = async () => {
-    try {
-      if (audioFile) {
-        const url = URL.createObjectURL(audioFile);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `musicmilk_${audioFile.name}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else if (audioUrl) {
-        const response = await fetch(audioUrl);
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const originalName = audioUrl.split('/').pop() || 'audio.mp3';
-        a.download = `musicmilk_${originalName}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Error downloading file:', error);
     }
   };
 
@@ -119,12 +112,10 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
         </div>
       )}
       
-      {/* Simple wrapper for waveform */}
       <div className="w-full overflow-hidden">
         <div ref={containerRef} className={isLoading ? 'invisible' : ''} />
       </div>
       
-      {/* Controls */}
       <div className="flex items-center gap-4">
         <button
           onClick={togglePlayPause}
@@ -143,15 +134,6 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
           <span>/</span>
           <span>{formatTime(duration)}</span>
         </div>
-
-        <button
-          onClick={handleDownload}
-          disabled={isLoading}
-          className="bg-blue-600/10 hover:bg-blue-600/20 p-2.5 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
-          title="Download audio"
-        >
-          <Download className="w-5 h-5 text-blue-600" />
-        </button>
       </div>
     </div>
   );
