@@ -355,7 +355,7 @@ export function MixPlayer({ id }: { id: string }) {
 
   return (
     <motion.div
-      className="min-h-screen relative"
+      className="relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
