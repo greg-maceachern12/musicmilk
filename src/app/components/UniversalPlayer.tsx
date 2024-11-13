@@ -99,7 +99,7 @@ export function UniversalPlayer() {
                 {isPlaying ? (
                   <Pause className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
                 ) : (
-                  <Play className="w-4 h-4 lg:w-5 lg:h-5 text-white ml-0.5" />
+                  <Play className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
                 )}
               </button>
 
