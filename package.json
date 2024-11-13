@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "preinstall": "npm install framer-motion --legacy-peer-deps",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
