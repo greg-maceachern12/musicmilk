@@ -235,14 +235,14 @@ export function MixPlayer({ id }: { id: string }) {
   });
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-gray-800">
-      <main className="container mx-auto px-4 py-4 lg:py-12">
+    <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-2xl">
+      <main className="container mx-auto px-4 py-4 lg:py-20">
         <div className="max-w-5xl mx-auto">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 lg:p-8 shadow-lg">
             {/* Main Layout Container - Side by side on desktop */}
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
               {/* Cover Art Section */}
-              <div className="w-48 lg:w-60 mx-auto lg:mx-0 shrink-0">
+              <div className="w-56 lg:w-60 mx-auto lg:mx-0 shrink-0">
                 <div className="aspect-square w-full rounded-xl overflow-hidden bg-gray-700 shadow-lg relative">
                   {mix.cover_url ? (
                     <Image
@@ -282,7 +282,7 @@ export function MixPlayer({ id }: { id: string }) {
                       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight break-words">
                         {mix.title}
                       </h1>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         {/* Like Button */}
                         <button
                           onClick={handleLikeToggle}
