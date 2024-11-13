@@ -1,18 +1,16 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useAudio } from '../contexts/AudioContext';
 import { Waveform } from './Waveform';
 import { Music, Play, Pause } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type WaveSurfer from 'wavesurfer.js';
 
 export function UniversalPlayer() {
   const { state, dispatch } = useAudio();
   const { currentMix, isPlaying } = state;
   const [isVisible, setIsVisible] = useState(false);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
 
   useEffect(() => {
     setIsVisible(Boolean(currentMix));
@@ -111,9 +109,6 @@ export function UniversalPlayer() {
                   <Waveform
                     audioUrl={currentMix.audio_url}
                     key={currentMix.id}
-                    onWavesurferInit={(wavesurfer: WaveSurfer) => {
-                      wavesurferRef.current = wavesurfer;
-                    }}
                   />
                 )}
               </div>

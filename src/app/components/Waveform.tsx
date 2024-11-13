@@ -8,7 +8,6 @@ import { useAudio } from '../contexts/AudioContext';
 interface WaveformProps {
   audioUrl?: string;
   audioFile?: File;
-  onWavesurferInit?: (wavesurfer: WaveSurfer) => void; // Added this prop
 }
 
 const formatTime = (seconds: number): string => {
@@ -17,7 +16,7 @@ const formatTime = (seconds: number): string => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-export function Waveform({ audioUrl, audioFile, onWavesurferInit }: WaveformProps) {
+export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -44,11 +43,6 @@ export function Waveform({ audioUrl, audioFile, onWavesurferInit }: WaveformProp
     });
 
     wavesurferRef.current = wavesurfer;
-
-    // Call the onWavesurferInit callback if provided
-    if (onWavesurferInit) {
-      onWavesurferInit(wavesurfer);
-    }
 
     wavesurfer.on('ready', () => {
       setDuration(wavesurfer.getDuration());
@@ -79,7 +73,7 @@ export function Waveform({ audioUrl, audioFile, onWavesurferInit }: WaveformProp
     return () => {
       wavesurfer.destroy();
     };
-  }, [audioUrl, audioFile, dispatch, state.currentMix, onWavesurferInit]);
+  }, [audioUrl, audioFile, dispatch, state.currentMix]);
 
   // Sync wavesurfer with global play state only when it's not an internal change
   useEffect(() => {
