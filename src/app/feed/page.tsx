@@ -26,7 +26,7 @@ interface Mix {
   created_at: string;
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 8;
 
 
 export default function FeedPage() {
