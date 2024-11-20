@@ -72,7 +72,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     };
   }, [audioUrl, audioFile, dispatch, state.currentMix]);
 
-  // Handle seeking
+  // Handle seekings
   useEffect(() => {
     if (seekTime !== undefined && wavesurferRef.current && !isLoading) {
       wavesurferRef.current.seekTo(seekTime / wavesurferRef.current.getDuration());
