@@ -48,7 +48,10 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     });
 
     wavesurfer.on('audioprocess', () => {
-      setCurrentTime(wavesurfer.getCurrentTime());
+      const time = wavesurfer.getCurrentTime();
+      setCurrentTime(time);
+      // Dispatch current time to AudioContext
+      dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
     wavesurfer.on('play', () => {
@@ -59,6 +62,13 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     wavesurfer.on('pause', () => {
       setIsInternalPlayChange(true);
       dispatch({ type: 'STOP' });
+    });
+
+    // Also update time on seek
+    wavesurfer.on('seeking', () => {
+      const time = wavesurfer.getCurrentTime();
+      setCurrentTime(time);
+      dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
     if (audioFile) {

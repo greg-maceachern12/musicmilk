@@ -8,11 +8,25 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Waveform } from './Waveform';
 import { MixMetadataForm } from './MixMetadataForm';
 
+interface Chapter {
+  title: string;
+  timestamp: string;
+  order: number;
+}
+
+interface MixMetadata {
+  title: string;
+  artist: string;
+  genre: string;
+  description: string;
+  chapters: Chapter[];
+}
+
 export function UploadZone() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [metadata, setMetadata] = useState({
+  const [metadata, setMetadata] = useState<MixMetadata>({
     title: '',
     artist: '',
     genre: '',

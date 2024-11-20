@@ -559,9 +559,20 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                     {mix.description}
                   </motion.p>
                 )}
-                {mix.chapters && <ChapterList chapters={mix.chapters} />}
               </div>
             </div>
+            {/* Move ChapterList inside the main content box */}
+            {mix.chapters && mix.chapters.length > 0 && (
+              <motion.div
+                className="mt-8 border-t border-white/10 pt-8"
+                variants={fadeInUp}
+                initial="initial"
+                animate="animate"
+                transition={{ ...defaultTransition, delay: 0.9 }}
+              >
+                <ChapterList chapters={mix.chapters} />
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </main>

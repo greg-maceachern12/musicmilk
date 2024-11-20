@@ -1,9 +1,10 @@
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 interface Chapter {
   title: string;
-  timestamp: string; // in format "MM:SS"
+  timestamp: string;
   order: number;
+  error?: string;
 }
 
 interface MixMetadata {
@@ -20,6 +21,51 @@ interface MixMetadataFormProps {
   disabled?: boolean;
 }
 
+function formatTimestamp(input: string): string {
+  // Remove any non-digit characters
+  const digits = input.replace(/\D/g, '');
+  
+  // Handle different cases based on length
+  if (digits.length <= 2) {
+    return digits.padStart(2, '0');
+  } else if (digits.length <= 4) {
+    const minutes = digits.slice(0, -2).padStart(2, '0');
+    const seconds = digits.slice(-2).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  } else {
+    const hours = digits.slice(0, -4).padStart(2, '0');
+    const minutes = digits.slice(-4, -2).padStart(2, '0');
+    const seconds = digits.slice(-2).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+}
+
+function validateTimestamp(timestamp: string): string | null {
+  // Empty timestamp
+  if (!timestamp) return "Timestamp is required";
+
+  // Check format
+  const timestampRegex = /^(?:(?:[0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])|(?:[0-5][0-9]:[0-5][0-9])$/;
+  if (!timestampRegex.test(timestamp)) {
+    return "Invalid format. Use HH:MM:SS or MM:SS";
+  }
+
+  // Validate the timestamp values
+  const parts = timestamp.split(':').map(Number);
+  if (parts.length === 2) {
+    const [minutes, seconds] = parts;
+    if (minutes >= 60) return "Minutes cannot exceed 59";
+    if (seconds >= 60) return "Seconds cannot exceed 59";
+  } else if (parts.length === 3) {
+    const [hours, minutes, seconds] = parts;
+    if (hours >= 24) return "Hours cannot exceed 23";
+    if (minutes >= 60) return "Minutes cannot exceed 59";
+    if (seconds >= 60) return "Seconds cannot exceed 59";
+  }
+
+  return null;
+}
+
 export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMetadataFormProps) {
   const handleChange = (field: keyof Omit<MixMetadata, 'chapters'>) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -34,10 +80,26 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newChapters = [...metadata.chapters];
-    newChapters[index] = {
-      ...newChapters[index],
-      [field]: e.target.value
-    };
+    
+    if (field === 'timestamp') {
+      // Format the timestamp as the user types
+      const formattedTimestamp = formatTimestamp(e.target.value);
+      
+      // Validate the timestamp
+      const error = validateTimestamp(formattedTimestamp);
+      
+      newChapters[index] = {
+        ...newChapters[index],
+        timestamp: formattedTimestamp,
+        error: error || undefined
+      };
+    } else {
+      newChapters[index] = {
+        ...newChapters[index],
+        [field]: e.target.value
+      };
+    }
+    
     onChange({
       ...metadata,
       chapters: newChapters
@@ -57,15 +119,15 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
   };
 
   const removeChapter = (index: number) => {
-    const newChapters = metadata.chapters.filter((_, i) => i !== index);
-    // Update order of remaining chapters
-    const reorderedChapters = newChapters.map((chapter, i) => ({
-      ...chapter,
-      order: i
-    }));
+    const newChapters = metadata.chapters
+      .filter((_, i) => i !== index)
+      .map((chapter, i) => ({
+        ...chapter,
+        order: i
+      }));
     onChange({
       ...metadata,
-      chapters: reorderedChapters
+      chapters: newChapters
     });
   };
 
@@ -74,7 +136,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
       <h2 className="text-xl font-bold mb-4">Mix Details</h2>
 
       <div className="space-y-4">
-        {/* Existing fields */}
+        {/* Basic fields remain the same */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Title*
@@ -135,7 +197,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
           />
         </div>
 
-        {/* Chapters section */}
+        {/* Enhanced Chapters section */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <label className="block text-sm font-medium text-gray-300">
@@ -153,38 +215,48 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
           </div>
 
           {metadata.chapters.map((chapter, index) => (
-            <div key={index} className="flex gap-3 items-start">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={chapter.title}
-                  onChange={handleChapterChange(index, 'title')}
+            <div key={index} className="space-y-2">
+              <div className="flex gap-3 items-start">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={chapter.title}
+                    onChange={handleChapterChange(index, 'title')}
+                    disabled={disabled}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="Song title"
+                  />
+                </div>
+                <div className="w-32">
+                  <input
+                    type="text"
+                    value={chapter.timestamp}
+                    onChange={handleChapterChange(index, 'timestamp')}
+                    disabled={disabled}
+                    className={`w-full bg-gray-700 border rounded-lg px-4 py-2
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             ${chapter.error ? 'border-red-500' : 'border-gray-600'}`}
+                    placeholder="HH:MM:SS"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeChapter(index)}
                   disabled={disabled}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="Song title"
-                />
+                  className="p-2 hover:bg-gray-700 rounded-full disabled:opacity-50"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="w-24">
-                <input
-                  type="text"
-                  value={chapter.timestamp}
-                  onChange={handleChapterChange(index, 'timestamp')}
-                  disabled={disabled}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="HH:MM:SS"
-                  pattern="[0-9]{2}:[0-9]{2}"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => removeChapter(index)}
-                disabled={disabled}
-                className="p-2 hover:bg-gray-700 rounded-full disabled:opacity-50"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              
+              {/* Error message */}
+              {chapter.error && (
+                <div className="flex items-center gap-2 text-red-400 text-sm ml-1">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{chapter.error}</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
