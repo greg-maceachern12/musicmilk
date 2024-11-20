@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MixMenu } from '@/app/components/MixMenu';
+import { ChapterList } from '@/app/components/ChapterList';
 import { useAudio } from '@/app/contexts/AudioContext';
 import {
   fadeIn,
@@ -31,6 +32,18 @@ interface Mix {
   created_at: string;
   play_count: number;
   user_id: string | null;
+  chapters: {
+    id: string;
+    mix_id: string;
+    title: string;
+    timestamp: string;
+    order: number;
+  }[];
+}
+
+interface MixPlayerProps {
+  mix: Mix;
+  initialLikeCount: number;
 }
 
 async function extractColors(imageSrc: string): Promise<string[]> {
@@ -124,13 +137,12 @@ async function extractColors(imageSrc: string): Promise<string[]> {
 }
 
 
-export function MixPlayer({ id }: { id: string }) {
-  const [mix, setMix] = useState<Mix | null>(null);
+export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
@@ -138,7 +150,7 @@ export function MixPlayer({ id }: { id: string }) {
   const [backgroundColors, setBackgroundColors] = useState<string[]>(['#1e293b', '#0f172a']);
 
   // Check if this mix is currently playing
-  const isCurrentMix = state.currentMix?.id === id;
+  const isCurrentMix = state.currentMix?.id === mix.id;
   const isPlaying = isCurrentMix && state.isPlaying;
 
   // Set up media session metadata when mix data is loaded
@@ -164,52 +176,17 @@ export function MixPlayer({ id }: { id: string }) {
       setUser(user);
     });
 
-    async function fetchMixAndLikes() {
-      const { data: mixData, error: mixError } = await supabase
-        .from('mixes')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (mixError) {
-        console.error('Error fetching mix:', mixError);
-        return;
-      }
-
-      setMix(mixData);
-      document.title = `${mixData.title} | MusicMilk`;
-
-      // Extract colors from cover art as soon as we have the mix data
-
-      if (mixData.cover_url) {
-        const colors = await extractColors(mixData.cover_url);
-        setBackgroundColors(colors);
-        // For debugging, use useEffect to log the updated state
-        console.log('Setting new colors:', colors);
-      }
-      console.log(backgroundColors)
-
-      // Update play count
-      await supabase
-        .from('mixes')
-        .update({ play_count: (mixData.play_count || 0) + 1 })
-        .eq('id', id);
-
-      const { count } = await supabase
-        .from('likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('mix_id', id);
-
-      setLikeCount(count || 0);
+    // Remove fetchMixAndLikes function
+    // Only extract colors if cover exists
+    if (mix.cover_url) {
+      extractColors(mix.cover_url).then(setBackgroundColors);
     }
-
-    fetchMixAndLikes();
-  }, [id, supabase]);
+  }, [mix.cover_url, supabase.auth]);
 
   // Check if current user has liked the mix
   useEffect(() => {
     async function checkLikeStatus() {
-      if (!user || !mix) return;
+      if (!user) return;
 
       const { data, error } = await supabase
         .from('likes')
@@ -224,13 +201,10 @@ export function MixPlayer({ id }: { id: string }) {
     }
 
     checkLikeStatus();
-  }, [user, mix, supabase]);
+  }, [user, mix.id, supabase]);
 
   const handlePlayPause = () => {
-    if (!mix) return;
-
     if (!isCurrentMix) {
-      // Start playing this mix
       dispatch({
         type: 'PLAY_MIX',
         payload: {
@@ -243,7 +217,6 @@ export function MixPlayer({ id }: { id: string }) {
         }
       });
     } else {
-      // Toggle play/pause for current mix
       dispatch({ type: 'TOGGLE_PLAY' });
     }
   };
@@ -586,6 +559,7 @@ export function MixPlayer({ id }: { id: string }) {
                     {mix.description}
                   </motion.p>
                 )}
+                {mix.chapters && <ChapterList chapters={mix.chapters} />}
               </div>
             </div>
           </motion.div>

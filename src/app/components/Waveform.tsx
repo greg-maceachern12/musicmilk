@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause } from 'lucide-react';
@@ -24,7 +22,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
   const { state, dispatch } = useAudio();
-  const { isPlaying } = state;
+  const { isPlaying, seekTime } = state;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -63,7 +61,6 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       dispatch({ type: 'STOP' });
     });
 
-    // Load audio
     if (audioFile) {
       wavesurfer.loadBlob(audioFile);
     } else if (audioUrl) {
@@ -75,7 +72,15 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     };
   }, [audioUrl, audioFile, dispatch, state.currentMix]);
 
-  // Sync wavesurfer with global play state only when it's not an internal change
+  // Handle seeking
+  useEffect(() => {
+    if (seekTime !== undefined && wavesurferRef.current && !isLoading) {
+      wavesurferRef.current.seekTo(seekTime / wavesurferRef.current.getDuration());
+      dispatch({ type: 'CLEAR_SEEK' });
+    }
+  }, [seekTime, isLoading, dispatch]);
+
+  // Sync wavesurfer with global play state
   useEffect(() => {
     if (!wavesurferRef.current || isInternalPlayChange) {
       setIsInternalPlayChange(false);
@@ -102,7 +107,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     <div className="space-y-4">
       {isLoading && (
         <div className="flex justify-center items-center h-16">
-          <div className="text-gray-400">Loading audio...</div>
+          <div className="text-gray-400">Loading waveform...</div>
         </div>
       )}
       

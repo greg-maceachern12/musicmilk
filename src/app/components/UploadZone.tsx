@@ -16,10 +16,11 @@ export function UploadZone() {
     title: '',
     artist: '',
     genre: '',
-    description: ''
+    description: '',
+    chapters: []
   });
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -29,11 +30,11 @@ export function UploadZone() {
 
     const extractMetadata = async () => {
       console.log('Extracting metadata from:', audioFile.name);
-      
+
       // Extract basic metadata from filename
       const filename = audioFile.name;
       const title = filename.replace(/\.[^/.]+$/, ''); // Remove extension
-      
+
       setMetadata(prev => ({
         ...prev,
         title: title
@@ -51,22 +52,21 @@ export function UploadZone() {
       title: '',
       artist: '',
       genre: '',
-      description: ''
+      description: '',
+      chapters: []
     });
     setIsUploading(false);
   };
 
   const handleUpload = async () => {
     if (!audioFile || !metadata.title) return;
-  
+
     setIsUploading(true);
     try {
       // Upload audio file first with metadata
       const audioResponse = await fetch('/api/upload', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           filename: audioFile.name,
           fileType: audioFile.type,
@@ -75,7 +75,14 @@ export function UploadZone() {
             title: metadata.title,
             artist: metadata.artist || null,
             genre: metadata.genre || null,
-            description: metadata.description || null
+            description: metadata.description || null,
+            ...(metadata.chapters.length > 0 && {
+              chapters: metadata.chapters.map(chapter => ({
+                title: chapter.title,
+                timestamp: chapter.timestamp,
+                order: chapter.order
+              }))
+            })
           }
         }),
       });
@@ -119,7 +126,7 @@ export function UploadZone() {
         }
 
         const { uploadUrl: coverUploadUrl, blobUrl: coverUrl } = await coverResponse.json();
-        
+
         const coverUploadResponse = await fetch(coverUploadUrl, {
           method: 'PUT',
           headers: {
@@ -145,7 +152,7 @@ export function UploadZone() {
       console.log('Upload successful:', mix);
       router.push(`/mix/${mix.id}`);
       resetForm();
-      
+
     } catch (error) {
       console.error('Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -238,7 +245,7 @@ export function UploadZone() {
           {/* Two Column Layout for Metadata and Cover */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Metadata Form Component */}
-            <MixMetadataForm 
+            <MixMetadataForm
               metadata={metadata}
               onChange={setMetadata}
               disabled={isUploading}

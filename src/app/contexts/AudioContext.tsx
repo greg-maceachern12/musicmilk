@@ -15,12 +15,15 @@ interface Mix {
 interface AudioState {
   currentMix: Mix | null;
   isPlaying: boolean;
+  seekTime?: number;
 }
 
 type AudioAction = 
   | { type: 'PLAY_MIX'; payload: Mix }
   | { type: 'TOGGLE_PLAY' }
-  | { type: 'STOP' };
+  | { type: 'STOP' }
+  | { type: 'SEEK'; payload: number }
+  | { type: 'CLEAR_SEEK' };
 
 const initialState: AudioState = {
   currentMix: null,
@@ -49,6 +52,16 @@ function audioReducer(state: AudioState, action: AudioAction): AudioState {
       return {
         ...state,
         isPlaying: false,
+      };
+    case 'SEEK':
+      return {
+        ...state,
+        seekTime: action.payload,
+      };
+    case 'CLEAR_SEEK':
+      return {
+        ...state,
+        seekTime: undefined,
       };
     default:
       return state;
