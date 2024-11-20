@@ -1,10 +1,20 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
 import { MixCard, MixCardSkeleton } from '../components/MixCard';
+import {
+  fadeIn,
+  fadeInDown,
+  fadeInUp,
+  listContainer,
+  pageTransition,
+  defaultTransition,
+  cardTransition
+} from '@/lib/animations';
 
 interface Mix {
   id: string;
@@ -16,7 +26,8 @@ interface Mix {
   created_at: string;
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 8;
+
 
 export default function FeedPage() {
   const [mixes, setMixes] = useState<Mix[]>([]);
@@ -26,6 +37,7 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
   const loaderRef = useRef(null);
   const supabase = createClientComponentClient();
 
@@ -33,6 +45,16 @@ export default function FeedPage() {
     try {
       if (!isInitial) {
         setIsLoadingMore(true);
+      }
+
+      // Calculate the start index
+      const startIndex = pageNumber * ITEMS_PER_PAGE;
+      
+      // Don't fetch if we're beyond the total count
+      if (totalCount > 0 && startIndex >= totalCount) {
+        setHasMore(false);
+        setIsLoadingMore(false);
+        return;
       }
 
       let query = supabase
@@ -45,21 +67,42 @@ export default function FeedPage() {
         query = query.or(`title.ilike.%${search}%,artist.ilike.%${search}%,genre.ilike.%${search}%`);
       }
 
-      const { data, error, count } = await query
-        .range(pageNumber * ITEMS_PER_PAGE, (pageNumber + 1) * ITEMS_PER_PAGE - 1);
+      const { data, error: fetchError, count } = await query
+        .range(startIndex, startIndex + ITEMS_PER_PAGE - 1);
 
-      if (error) {
-        throw error;
+      if (fetchError) {
+        // Check specifically for range error
+        if (fetchError.code === '416') {
+          setHasMore(false);
+          setIsLoadingMore(false);
+          return;
+        }
+        throw fetchError;
       }
 
+      // Update total count only on initial load or search
+      if (isInitial && count !== null) {
+        setTotalCount(count);
+      }
+
+      // Handle no results
+      if (!data || data.length === 0) {
+        if (isInitial) {
+          setMixes([]);
+        }
+        setHasMore(false);
+        return;
+      }
+
+      // Update mixes based on whether this is initial load or pagination
       if (isInitial) {
         setMixes(data);
       } else {
         setMixes(prevMixes => [...prevMixes, ...data]);
       }
 
-      const totalMixes = count || 0;
-      setHasMore((pageNumber + 1) * ITEMS_PER_PAGE < totalMixes);
+      // Update hasMore based on current data length and total count
+      setHasMore(data.length === ITEMS_PER_PAGE && (!count || (startIndex + data.length) < count));
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load mixes');
@@ -72,10 +115,10 @@ export default function FeedPage() {
   // Intersection Observer callback
   const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
     const target = entries[0];
-    if (target.isIntersecting && hasMore && !isLoadingMore) {
+    if (target.isIntersecting && hasMore && !isLoadingMore && !isLoading) {
       setPage(prevPage => prevPage + 1);
     }
-  }, [hasMore, isLoadingMore]);
+  }, [hasMore, isLoadingMore, isLoading]);
 
   // Set up intersection observer
   useEffect(() => {
@@ -103,6 +146,8 @@ export default function FeedPage() {
   useEffect(() => {
     setIsLoading(true);
     setPage(0);
+    setHasMore(true);
+    setTotalCount(0);
     fetchMixes(0, searchQuery, true);
   }, [searchQuery]);
 
@@ -116,7 +161,11 @@ export default function FeedPage() {
       <div className="text-center py-8">
         <p className="text-red-400">{error}</p>
         <button 
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            setError(null);
+            setPage(0);
+            fetchMixes(0, searchQuery, true);
+          }}
           className="mt-4 px-4 py-2 bg-gray-800 rounded-md hover:bg-gray-700 transition"
         >
           Try Again
@@ -126,15 +175,30 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="space-y-8 min-h-screen">
+    <motion.div 
+      className="space-y-8 min-h-screen"
+      {...pageTransition}
+    >
       {/* Header */}
-      <div className="text-center space-y-4 py-8">
+      <motion.div 
+        className="text-center space-y-4 py-8"
+        variants={fadeInDown}
+        initial="initial"
+        animate="animate"
+        transition={defaultTransition}
+      >
         <h1 className="text-4xl font-bold">Explore Mixes</h1>
         <p className="text-gray-400">Discover amazing music combinations from our community</p>
-      </div>
+      </motion.div>
 
       {/* Search Bar */}
-      <div className="max-w-2xl mx-auto px-4">
+      <motion.div 
+        className="max-w-2xl mx-auto px-4"
+        variants={fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={{ ...defaultTransition, delay: 0.2 }}
+      >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -144,7 +208,7 @@ export default function FeedPage() {
             className="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Mixes Grid */}
       <div className="space-y-6 px-4">
@@ -154,24 +218,48 @@ export default function FeedPage() {
               <MixCardSkeleton key={i} />
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        ) : mixes.length > 0 ? (
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={listContainer}
+            initial="initial"
+            animate="animate"
+          >
             {mixes.map((mix) => (
-              <MixCard key={mix.id} mix={mix} />
+              <motion.div
+                key={mix.id}
+                {...cardTransition}
+              >
+                <MixCard mix={mix} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            className="text-center py-8"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+          >
+            <p className="text-gray-400">No mixes found{searchQuery ? ' for your search' : ''}.</p>
+          </motion.div>
         )}
 
-        {/* Infinite scroll trigger element */}
-        <div 
-          ref={loaderRef}
-          className="h-10 w-full flex items-center justify-center"
-        >
-          {isLoadingMore && (
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          )}
-        </div>
+        {/* Infinite scroll loader */}
+        {(hasMore || isLoadingMore) && (
+          <div ref={loaderRef} className="h-10 w-full flex items-center justify-center">
+            {isLoadingMore && (
+              <motion.div 
+                className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              />
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 }
+
