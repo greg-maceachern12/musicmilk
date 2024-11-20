@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause, Download } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
+import { useAudio } from '../contexts/AudioContext';
 
 interface WaveformProps {
   audioUrl?: string;
   audioFile?: File;
-  onPlayPause?: (isPlaying: boolean) => void;
 }
 
 const formatTime = (seconds: number): string => {
@@ -16,32 +16,30 @@ const formatTime = (seconds: number): string => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
+export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
+  const { state, dispatch } = useAudio();
+  const { isPlaying } = state;
 
   useEffect(() => {
     if (!containerRef.current) return;
-
-    // Cleanup previous instance
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
-    }
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: '#4a5568',
       progressColor: '#3b82f6',
-      cursorColor: '#3b82f6',
+      cursorColor: 'transparent',
       barWidth: 2,
-      barGap: 1,
-      height: 100,
+      height: 64,
       normalize: true,
-      backend: 'MediaElement'
+      backend: 'WebAudio',
+      mediaControls: true,
+      media: document.createElement('audio')
     });
 
     wavesurferRef.current = wavesurfer;
@@ -56,33 +54,43 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
     });
 
     wavesurfer.on('play', () => {
-      setIsPlaying(true);
-      onPlayPause?.(true);
+      setIsInternalPlayChange(true);
+      dispatch({ type: 'PLAY_MIX', payload: state.currentMix! });
     });
 
     wavesurfer.on('pause', () => {
-      setIsPlaying(false);
-      onPlayPause?.(false);
+      setIsInternalPlayChange(true);
+      dispatch({ type: 'STOP' });
     });
 
-    wavesurfer.on('timeupdate', () => {
-      setCurrentTime(wavesurfer.getCurrentTime());
-    });
-
+    // Load audio
     if (audioFile) {
-      // If we have a File object, load it directly
       wavesurfer.loadBlob(audioFile);
     } else if (audioUrl) {
-      // If we have a URL, load it
       wavesurfer.load(audioUrl);
     }
 
     return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-      }
+      wavesurfer.destroy();
     };
-  }, [audioUrl, audioFile, onPlayPause]);
+  }, [audioUrl, audioFile, dispatch, state.currentMix]);
+
+  // Sync wavesurfer with global play state only when it's not an internal change
+  useEffect(() => {
+    if (!wavesurferRef.current || isInternalPlayChange) {
+      setIsInternalPlayChange(false);
+      return;
+    }
+
+    const shouldPlay = isPlaying && !wavesurferRef.current.isPlaying();
+    const shouldPause = !isPlaying && wavesurferRef.current.isPlaying();
+
+    if (shouldPlay) {
+      wavesurferRef.current.play();
+    } else if (shouldPause) {
+      wavesurferRef.current.pause();
+    }
+  }, [isPlaying, isInternalPlayChange]);
 
   const togglePlayPause = () => {
     if (wavesurferRef.current) {
@@ -90,49 +98,17 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
     }
   };
 
-  const handleDownload = async () => {
-    try {
-      if (audioFile) {
-        // If we have a File object, create a download link for it
-        const url = URL.createObjectURL(audioFile);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `musicmilk_${audioFile.name}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else if (audioUrl) {
-        // If we have a URL, fetch it and create a download
-        const response = await fetch(audioUrl);
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        // Extract filename from URL or use a default name
-        const originalName = audioUrl.split('/').pop() || 'audio.mp3';
-        const filename = `musicmilk_${originalName}`;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Error downloading file:', error);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      {isLoading ? (
-        <div className="flex justify-center items-center h-[100px]">
-          <div className="animate-pulse text-gray-400">
-            Loading waveform...
-          </div>
+      {isLoading && (
+        <div className="flex justify-center items-center h-16">
+          <div className="text-gray-400">Loading audio...</div>
         </div>
-      ) : null}
-      <div ref={containerRef} className={`w-full ${isLoading ? 'invisible' : ''}`} />
+      )}
+      
+      <div className="w-full overflow-hidden">
+        <div ref={containerRef} className={isLoading ? 'invisible' : ''} />
+      </div>
       
       <div className="flex items-center gap-4">
         <button
@@ -152,15 +128,6 @@ export function Waveform({ audioUrl, audioFile, onPlayPause }: WaveformProps) {
           <span>/</span>
           <span>{formatTime(duration)}</span>
         </div>
-
-        <button
-          onClick={handleDownload}
-          disabled={isLoading}
-          className="bg-blue-600/10 hover:bg-blue-600/20 p-2.5 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ml-auto group"
-          title="Download audio"
-        >
-          <Download className="w-5 h-5 text-blue-600 transition-transform group-hover:scale-110" />
-        </button>
       </div>
     </div>
   );

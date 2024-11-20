@@ -1,10 +1,12 @@
 'use client';
 
-import { Upload, Image as ImageIcon, X } from 'lucide-react';
-import { useState } from 'react';
+import { Upload, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Waveform } from './Waveform';
+import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Waveform } from './Waveform';
+import { MixMetadataForm } from './MixMetadataForm';
 
 export function UploadZone() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -16,13 +18,30 @@ export function UploadZone() {
     genre: '',
     description: ''
   });
-
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-  const [lastUploadedMix, setLastUploadedMix] = useState<string | null>(null);
-
+  
+  const router = useRouter();
   const supabase = createClientComponentClient();
+
+  // Extract title from audio file
+  useEffect(() => {
+    if (!audioFile) return;
+
+    const extractMetadata = async () => {
+      console.log('Extracting metadata from:', audioFile.name);
+      
+      // Extract basic metadata from filename
+      const filename = audioFile.name;
+      const title = filename.replace(/\.[^/.]+$/, ''); // Remove extension
+      
+      setMetadata(prev => ({
+        ...prev,
+        title: title
+      }));
+    };
+
+    extractMetadata();
+  }, [audioFile]);
 
   const resetForm = () => {
     setAudioFile(null);
@@ -34,87 +53,99 @@ export function UploadZone() {
       genre: '',
       description: ''
     });
-    setUploadProgress(0);
     setIsUploading(false);
   };
 
   const handleUpload = async () => {
     if (!audioFile || !metadata.title) return;
-
+  
     setIsUploading(true);
     try {
-      // Upload audio file to Supabase Storage
-      const audioFileName = `${Date.now()}-${audioFile.name}`;
-      const { error: audioError } = await supabase.storage
-        .from('audio')
-        .upload(audioFileName, audioFile, {
-          cacheControl: '3600',
-          upsert: false
+      // Upload audio file first with metadata
+      const audioResponse = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename: audioFile.name,
+          fileType: audioFile.type,
+          isAudio: true,
+          metadata: {
+            title: metadata.title,
+            artist: metadata.artist || null,
+            genre: metadata.genre || null,
+            description: metadata.description || null
+          }
+        }),
+      });
+
+      if (!audioResponse.ok) {
+        throw new Error('Failed to get audio upload URL');
+      }
+
+      const { uploadUrl, mix } = await audioResponse.json();
+
+      // Upload audio file to Azure
+      const audioUploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'x-ms-blob-type': 'BlockBlob',
+          'Content-Type': audioFile.type,
+        },
+        body: audioFile
+      });
+
+      if (!audioUploadResponse.ok) {
+        throw new Error('Failed to upload audio file');
+      }
+
+      // Handle cover image if present
+      if (coverImage) {
+        const coverResponse = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: coverImage.name,
+            fileType: coverImage.type,
+            isAudio: false
+          }),
         });
 
-      if (audioError) {
-        console.error('Audio upload error:', audioError);
-        throw audioError;
-      }
-
-      // Get the public URL for the audio file
-      const { data: audioUrlData } = supabase.storage
-        .from('audio')
-        .getPublicUrl(audioFileName);
-
-      // Upload cover image if provided
-      let coverUrl = null;
-      if (coverImage) {
-        const coverFileName = `${Date.now()}-${coverImage.name}`;
-        const { error: coverError } = await supabase.storage
-          .from('covers')
-          .upload(coverFileName, coverImage, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (coverError) {
-          console.error('Cover upload error:', coverError);
-        } else {
-          const { data: coverUrlData } = supabase.storage
-            .from('covers')
-            .getPublicUrl(coverFileName);
-          coverUrl = coverUrlData.publicUrl;
+        if (!coverResponse.ok) {
+          throw new Error('Failed to get cover upload URL');
         }
+
+        const { uploadUrl: coverUploadUrl, blobUrl: coverUrl } = await coverResponse.json();
+        
+        const coverUploadResponse = await fetch(coverUploadUrl, {
+          method: 'PUT',
+          headers: {
+            'x-ms-blob-type': 'BlockBlob',
+            'Content-Type': coverImage.type,
+          },
+          body: coverImage
+        });
+
+        if (!coverUploadResponse.ok) {
+          throw new Error('Failed to upload cover image');
+        }
+
+        // Update the mix record with cover URL
+        const { error: updateError } = await supabase
+          .from('mixes')
+          .update({ cover_url: coverUrl })
+          .eq('id', mix.id);
+
+        if (updateError) throw updateError;
       }
 
-      // Store the mix metadata in the database
-      const { data: mix, error: dbError } = await supabase
-        .from('mixes')
-        .insert({
-          title: metadata.title,
-          artist: metadata.artist || null,
-          genre: metadata.genre || null,
-          description: metadata.description || null,
-          audio_url: audioUrlData.publicUrl,
-          cover_url: coverUrl,
-          play_count: 0
-        })
-        .select()
-        .single();
-
-      if (dbError) {
-        console.error('Database error:', dbError);
-        throw dbError;
-      }
-
-      console.log('Mix uploaded successfully:', mix);
-
-      // Generate the share URL using the mix ID
-      const shareUrl = `${window.location.origin}/mix/${mix.id}`;
-      setStreamUrl(shareUrl);
-
-      setLastUploadedMix(metadata.title);
-      setUploadProgress(100);
-
-      // Reset the form
+      console.log('Upload successful:', mix);
+      router.push(`/mix/${mix.id}`);
       resetForm();
-
+      
     } catch (error) {
       console.error('Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -142,7 +173,6 @@ export function UploadZone() {
 
   const clearAudio = () => {
     setAudioFile(null);
-    setUploadProgress(0);
   };
 
   const clearImage = () => {
@@ -152,6 +182,7 @@ export function UploadZone() {
     setCoverImage(null);
     setCoverPreview(null);
   };
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -164,7 +195,7 @@ export function UploadZone() {
               <Upload className="w-8 h-8 text-blue-500" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold">Upload your mix</h3>
+              <h3 className="text-xl font-semibold">Upload Your Mix</h3>
               <p className="text-sm text-gray-400">
                 Drag and drop or click to select
               </p>
@@ -206,73 +237,21 @@ export function UploadZone() {
 
           {/* Two Column Layout for Metadata and Cover */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Metadata Form - Takes up 2 columns */}
-            <div className="md:col-span-2 bg-gray-800 rounded-lg p-6 space-y-4">
-              <h2 className="text-xl font-bold mb-4">Mix Details</h2>
+            {/* Metadata Form Component */}
+            <MixMetadataForm 
+              metadata={metadata}
+              onChange={setMetadata}
+              disabled={isUploading}
+            />
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Title*
-                  </label>
-                  <input
-                    type="text"
-                    value={metadata.title}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    placeholder="Mix title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Artist
-                  </label>
-                  <input
-                    type="text"
-                    value={metadata.artist}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, artist: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    placeholder="Artist name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Genre
-                  </label>
-                  <input
-                    type="text"
-                    value={metadata.genre}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, genre: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    placeholder="e.g., House, Techno, Ambient"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={metadata.description}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
-                    rows={4}
-                    placeholder="Tell us about your mix"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Cover Art Upload - Takes up 1 column */}
+            {/* Cover Art Upload */}
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-lg font-medium mb-4">Cover Art</h3>
-              {coverImage ? (
+              {coverPreview ? (
                 <div className="space-y-4">
                   <div className="relative aspect-square">
                     <Image
-                      src={coverPreview!}
+                      src={coverPreview}
                       alt="Cover art preview"
                       fill
                       className="object-cover rounded-lg"
@@ -280,13 +259,14 @@ export function UploadZone() {
                   </div>
                   <button
                     onClick={clearImage}
-                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700"
+                    disabled={isUploading}
+                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Remove
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700">
+                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg ${!isUploading ? 'cursor-pointer hover:bg-gray-700' : 'opacity-50 cursor-not-allowed'}`}>
                   <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
                   <span className="text-sm text-gray-400">Add cover art</span>
                   <input
@@ -294,6 +274,7 @@ export function UploadZone() {
                     className="hidden"
                     accept="image/*"
                     onChange={handleImageSelect}
+                    disabled={isUploading}
                   />
                 </label>
               )}
@@ -303,18 +284,13 @@ export function UploadZone() {
           {/* Upload Progress */}
           {isUploading && (
             <div className="bg-gray-800 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">Uploading...</span>
-                <span className="text-sm text-gray-400">{Math.round(uploadProgress)}%</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                <span className="text-sm text-gray-400">Uploading your mix...</span>
               </div>
             </div>
           )}
+
           {/* Upload Button */}
           <div className="flex justify-end">
             <button
@@ -324,28 +300,6 @@ export function UploadZone() {
               disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
             >
               {isUploading ? 'Uploading...' : 'Upload Mix'}
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Success Message - Always show if there's a streamUrl */}
-      {streamUrl && (
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-lg font-medium mb-2">
-            🎉 {lastUploadedMix} uploaded successfully!
-          </h3>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={streamUrl}
-              readOnly
-              className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm"
-            />
-            <button
-              onClick={() => navigator.clipboard.writeText(streamUrl)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"
-            >
-              Copy
             </button>
           </div>
         </div>
