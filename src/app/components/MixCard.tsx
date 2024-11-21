@@ -73,18 +73,20 @@ export function MixCard({ mix }: MixCardProps) {
         </div>
 
         {/* Mix Info */}
-        <div>
-          <h3 className="font-medium truncate">
-            {mix.title}
-          </h3>
+        <div className="w-full">
+          <div className="w-full">
+            <h3 className="font-medium truncate max-w-full">
+              {mix.title}
+            </h3>
+          </div>
           <div className="flex justify-between items-center text-sm text-gray-400">
-            <div className="flex flex-col">
-              <p className="truncate">
+            <div className="flex flex-col min-w-0 flex-1 mr-4">
+              <p className="truncate max-w-full">
                 by {mix.artist || 'Unknown Artist'}
               </p>
               {mix.genre && (
                 <motion.span 
-                  className="text-blue-400 text-xs"
+                  className="text-blue-400 text-xs truncate"
                   variants={genreVariants}
                   initial="initial"
                   animate="animate"
@@ -97,6 +99,7 @@ export function MixCard({ mix }: MixCardProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
+              className="flex-shrink-0"
             >
               {mix.play_count} plays
             </motion.p>

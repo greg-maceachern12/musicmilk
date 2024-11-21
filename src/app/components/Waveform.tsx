@@ -20,6 +20,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
   const { state, dispatch } = useAudio();
   const { isPlaying, seekTime } = state;
@@ -47,10 +48,13 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       setIsLoading(false);
     });
 
+    wavesurfer.on('loading', (percent: number) => {
+      setLoadingProgress(percent);
+    });
+
     wavesurfer.on('audioprocess', () => {
       const time = wavesurfer.getCurrentTime();
       setCurrentTime(time);
-      // Dispatch current time to AudioContext
       dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
@@ -64,7 +68,6 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       dispatch({ type: 'STOP' });
     });
 
-    // Also update time on seek
     wavesurfer.on('seeking', () => {
       const time = wavesurfer.getCurrentTime();
       setCurrentTime(time);
@@ -117,7 +120,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     <div className="space-y-4">
       {isLoading && (
         <div className="flex justify-center items-center h-16">
-          <div className="text-gray-400">Loading waveform...</div>
+          <div className="text-gray-400">Loading audio - {loadingProgress}%</div>
         </div>
       )}
       

@@ -37,9 +37,9 @@ export function UniversalPlayer() {
             {/* Mix Info with hover animation - Hidden on mobile */}
             <Link 
               href={`/mix/${currentMix?.id}`} 
-              className="hidden sm:flex items-center gap-4 min-w-0 group hover:opacity-90 transition-all duration-200 transform hover:scale-[1.02]"
+              className="hidden sm:flex items-center gap-4 sm:w-[35%] lg:w-[30%] group hover:opacity-90 transition-all duration-200 transform hover:scale-[1.02]"
             >
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-800 shadow-lg ring-1 ring-white/10">
+              <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gray-800 shadow-lg ring-1 ring-white/10">
                 {currentMix?.cover_url ? (
                   <Image
                     src={currentMix.cover_url}
@@ -50,17 +50,17 @@ export function UniversalPlayer() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
-                    <Music className="w-6 h-6 text-gray-600" />
+                    <Music className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
                   </div>
                 )}
               </div>
               
-              <div className="min-w-0">
-                <h3 className="font-medium text-white truncate group-hover:text-blue-400 transition-colors">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-medium text-sm sm:text-base text-white truncate group-hover:text-blue-400 transition-colors">
                   {currentMix?.title}
                 </h3>
                 {currentMix?.artist && (
-                  <p className="text-sm text-gray-400 truncate mt-0.5 group-hover:text-gray-300 transition-colors">
+                  <p className="text-xs sm:text-sm text-gray-400 truncate mt-0.5 group-hover:text-gray-300 transition-colors">
                     {currentMix.artist}
                   </p>
                 )}
