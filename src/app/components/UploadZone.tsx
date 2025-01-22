@@ -38,6 +38,8 @@ export function UploadZone() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
+  const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB in bytes
+
   // Extract title from audio file
   useEffect(() => {
     if (!audioFile) return;
@@ -179,6 +181,11 @@ export function UploadZone() {
   const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile && selectedFile.type.startsWith('audio/')) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        alert('File size exceeds 250MB limit. Please choose a smaller file.');
+        e.target.value = ''; // Reset input
+        return;
+      }
       setAudioFile(selectedFile);
     }
   };
@@ -218,7 +225,7 @@ export function UploadZone() {
             <div className="space-y-2">
               <h3 className="text-xl font-semibold">Upload Your Mix</h3>
               <p className="text-sm text-gray-400">
-                Drag and drop or click to select
+                Drag and drop or click to select (max 250MB)
               </p>
             </div>
             <label className="cursor-pointer">
