@@ -225,7 +225,7 @@ export function UploadZone() {
               <input
                 type="file"
                 className="hidden"
-                accept="audio/*"
+                accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/*"
                 onChange={handleAudioSelect}
               />
               <span className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium inline-block">
