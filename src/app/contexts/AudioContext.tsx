@@ -1,4 +1,3 @@
-// src/app/contexts/AudioContext.tsx
 'use client';
 
 import React, { createContext, useContext, useReducer } from 'react';
@@ -15,16 +14,22 @@ interface Mix {
 interface AudioState {
   currentMix: Mix | null;
   isPlaying: boolean;
+  seekTime?: number;
+  currentTime: number; // Add this property
 }
 
 type AudioAction = 
   | { type: 'PLAY_MIX'; payload: Mix }
   | { type: 'TOGGLE_PLAY' }
-  | { type: 'STOP' };
+  | { type: 'STOP' }
+  | { type: 'SEEK'; payload: number }
+  | { type: 'CLEAR_SEEK' }
+  | { type: 'UPDATE_TIME'; payload: number }; // Add this action type
 
 const initialState: AudioState = {
   currentMix: null,
   isPlaying: false,
+  currentTime: 0,
 };
 
 const AudioContext = createContext<{
@@ -49,6 +54,21 @@ function audioReducer(state: AudioState, action: AudioAction): AudioState {
       return {
         ...state,
         isPlaying: false,
+      };
+    case 'SEEK':
+      return {
+        ...state,
+        seekTime: action.payload,
+      };
+    case 'CLEAR_SEEK':
+      return {
+        ...state,
+        seekTime: undefined,
+      };
+    case 'UPDATE_TIME':
+      return {
+        ...state,
+        currentTime: action.payload,
       };
     default:
       return state;

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause } from 'lucide-react';
@@ -22,9 +20,10 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
   const { state, dispatch } = useAudio();
-  const { isPlaying } = state;
+  const { isPlaying, seekTime } = state;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -32,7 +31,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: '#4a5568',
-      progressColor: '#3b82f6',
+      progressColor: '#00A1FF',
       cursorColor: 'transparent',
       barWidth: 2,
       height: 64,
@@ -49,8 +48,14 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       setIsLoading(false);
     });
 
+    wavesurfer.on('loading', (percent: number) => {
+      setLoadingProgress(percent);
+    });
+
     wavesurfer.on('audioprocess', () => {
-      setCurrentTime(wavesurfer.getCurrentTime());
+      const time = wavesurfer.getCurrentTime();
+      setCurrentTime(time);
+      dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
     wavesurfer.on('play', () => {
@@ -63,7 +68,12 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       dispatch({ type: 'STOP' });
     });
 
-    // Load audio
+    wavesurfer.on('seeking', () => {
+      const time = wavesurfer.getCurrentTime();
+      setCurrentTime(time);
+      dispatch({ type: 'UPDATE_TIME', payload: time });
+    });
+
     if (audioFile) {
       wavesurfer.loadBlob(audioFile);
     } else if (audioUrl) {
@@ -75,7 +85,15 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     };
   }, [audioUrl, audioFile, dispatch, state.currentMix]);
 
-  // Sync wavesurfer with global play state only when it's not an internal change
+  // Handle seekings
+  useEffect(() => {
+    if (seekTime !== undefined && wavesurferRef.current && !isLoading) {
+      wavesurferRef.current.seekTo(seekTime / wavesurferRef.current.getDuration());
+      dispatch({ type: 'CLEAR_SEEK' });
+    }
+  }, [seekTime, isLoading, dispatch]);
+
+  // Sync wavesurfer with global play state
   useEffect(() => {
     if (!wavesurferRef.current || isInternalPlayChange) {
       setIsInternalPlayChange(false);
@@ -102,7 +120,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     <div className="space-y-4">
       {isLoading && (
         <div className="flex justify-center items-center h-16">
-          <div className="text-gray-400">Loading audio...</div>
+          <div className="text-gray-400">Loading audio - {loadingProgress}%</div>
         </div>
       )}
       

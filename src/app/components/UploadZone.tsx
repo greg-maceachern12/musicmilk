@@ -8,20 +8,37 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Waveform } from './Waveform';
 import { MixMetadataForm } from './MixMetadataForm';
 
+interface Chapter {
+  title: string;
+  timestamp: string;
+  order: number;
+}
+
+interface MixMetadata {
+  title: string;
+  artist: string;
+  genre: string;
+  description: string;
+  chapters: Chapter[];
+}
+
 export function UploadZone() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [metadata, setMetadata] = useState({
+  const [metadata, setMetadata] = useState<MixMetadata>({
     title: '',
     artist: '',
     genre: '',
-    description: ''
+    description: '',
+    chapters: []
   });
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const router = useRouter();
   const supabase = createClientComponentClient();
+
+  const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB in bytes
 
   // Extract title from audio file
   useEffect(() => {
@@ -29,11 +46,11 @@ export function UploadZone() {
 
     const extractMetadata = async () => {
       console.log('Extracting metadata from:', audioFile.name);
-      
+
       // Extract basic metadata from filename
       const filename = audioFile.name;
       const title = filename.replace(/\.[^/.]+$/, ''); // Remove extension
-      
+
       setMetadata(prev => ({
         ...prev,
         title: title
@@ -51,22 +68,21 @@ export function UploadZone() {
       title: '',
       artist: '',
       genre: '',
-      description: ''
+      description: '',
+      chapters: []
     });
     setIsUploading(false);
   };
 
   const handleUpload = async () => {
     if (!audioFile || !metadata.title) return;
-  
+
     setIsUploading(true);
     try {
       // Upload audio file first with metadata
       const audioResponse = await fetch('/api/upload', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           filename: audioFile.name,
           fileType: audioFile.type,
@@ -75,7 +91,14 @@ export function UploadZone() {
             title: metadata.title,
             artist: metadata.artist || null,
             genre: metadata.genre || null,
-            description: metadata.description || null
+            description: metadata.description || null,
+            ...(metadata.chapters.length > 0 && {
+              chapters: metadata.chapters.map(chapter => ({
+                title: chapter.title,
+                timestamp: chapter.timestamp,
+                order: chapter.order
+              }))
+            })
           }
         }),
       });
@@ -119,7 +142,7 @@ export function UploadZone() {
         }
 
         const { uploadUrl: coverUploadUrl, blobUrl: coverUrl } = await coverResponse.json();
-        
+
         const coverUploadResponse = await fetch(coverUploadUrl, {
           method: 'PUT',
           headers: {
@@ -145,7 +168,7 @@ export function UploadZone() {
       console.log('Upload successful:', mix);
       router.push(`/mix/${mix.id}`);
       resetForm();
-      
+
     } catch (error) {
       console.error('Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -158,6 +181,11 @@ export function UploadZone() {
   const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile && selectedFile.type.startsWith('audio/')) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        alert('File size exceeds 250MB limit. Please choose a smaller file.');
+        e.target.value = ''; // Reset input
+        return;
+      }
       setAudioFile(selectedFile);
     }
   };
@@ -197,14 +225,14 @@ export function UploadZone() {
             <div className="space-y-2">
               <h3 className="text-xl font-semibold">Upload Your Mix</h3>
               <p className="text-sm text-gray-400">
-                Drag and drop or click to select
+                Drag and drop or click to select (max 250MB)
               </p>
             </div>
             <label className="cursor-pointer">
               <input
                 type="file"
                 className="hidden"
-                accept="audio/*"
+                accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/*"
                 onChange={handleAudioSelect}
               />
               <span className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium inline-block">
@@ -217,7 +245,7 @@ export function UploadZone() {
         // Form Interface
         <div className="space-y-8">
           {/* Waveform Section */}
-          <div className="bg-gray-800 rounded-lg p-6">
+          <div className="bg-gray-800/60 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-xl font-semibold">{audioFile.name}</h3>
@@ -227,7 +255,7 @@ export function UploadZone() {
               </div>
               <button
                 onClick={clearAudio}
-                className="p-2 hover:bg-gray-700 rounded-full"
+                className="p-2 hover:bg-gray-700/60 rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -238,14 +266,14 @@ export function UploadZone() {
           {/* Two Column Layout for Metadata and Cover */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Metadata Form Component */}
-            <MixMetadataForm 
+            <MixMetadataForm
               metadata={metadata}
               onChange={setMetadata}
               disabled={isUploading}
             />
 
             {/* Cover Art Upload */}
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className="bg-gray-800/60 rounded-lg p-6">
               <h3 className="text-lg font-medium mb-4">Cover Art</h3>
               {coverPreview ? (
                 <div className="space-y-4">
@@ -260,13 +288,13 @@ export function UploadZone() {
                   <button
                     onClick={clearImage}
                     disabled={isUploading}
-                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700/60 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Remove
                   </button>
                 </div>
               ) : (
-                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg ${!isUploading ? 'cursor-pointer hover:bg-gray-700' : 'opacity-50 cursor-not-allowed'}`}>
+                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg ${!isUploading ? 'cursor-pointer hover:bg-gray-700/60' : 'opacity-50 cursor-not-allowed'}`}>
                   <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
                   <span className="text-sm text-gray-400">Add cover art</span>
                   <input
@@ -283,7 +311,7 @@ export function UploadZone() {
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="bg-gray-800/60 rounded-lg p-4">
               <div className="flex items-center justify-center gap-3">
                 <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                 <span className="text-sm text-gray-400">Uploading your mix...</span>
@@ -296,7 +324,7 @@ export function UploadZone() {
             <button
               onClick={handleUpload}
               disabled={!metadata.title.trim() || !audioFile || isUploading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700/60 
               disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
             >
               {isUploading ? 'Uploading...' : 'Upload Mix'}

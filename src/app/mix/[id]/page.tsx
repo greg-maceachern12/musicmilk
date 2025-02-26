@@ -8,12 +8,7 @@ export const revalidate = 0;
 
 type Params = Promise<{ id: string }>;
 
-// Generate metadata for the page
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Params 
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
   const supabase = createServerComponentClient({ cookies });
   
@@ -35,7 +30,7 @@ export async function generateMetadata({
       description: mix.description || 'Listen to this mix on MusicMilk',
       images: [
         {
-          url: mix.cover_url || '/images/logo.png', // Using the logo from your public directory
+          url: mix.cover_url || '/images/logo.png',
           width: 1200,
           height: 630,
           alt: 'MusicMilk Logo'
@@ -53,17 +48,21 @@ export async function generateMetadata({
   };
 }
 
-export default async function MixPage({ 
-  params 
-}: { 
-  params: Params 
-}) {
-  const { id } = await params;
+async function getMixData(id: string) {
   const supabase = createServerComponentClient({ cookies });
   
+  // Fetch mix data with chapters
   const { data: mix } = await supabase
     .from('mixes')
-    .select('*')
+    .select(`
+      *,
+      chapters (
+        id,
+        title,
+        timestamp,
+        order
+      )
+    `)
     .eq('id', id)
     .single();
 
@@ -71,5 +70,30 @@ export default async function MixPage({
     notFound();
   }
 
-  return <MixPlayer id={id} />;
+  // Get like count
+  const { count: likeCount } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('mix_id', id);
+
+  // Update play count
+  await supabase
+    .from('mixes')
+    .update({ play_count: (mix.play_count || 0) + 1 })
+    .eq('id', id);
+
+  return {
+    mix,
+    likeCount: likeCount || 0
+  };
+}
+
+export default async function MixPage({ params }: { params: Params }) {
+  const { id } = await params;
+  const { mix, likeCount } = await getMixData(id);
+  
+  return <MixPlayer 
+    mix={mix} 
+    initialLikeCount={likeCount}
+  />;
 }

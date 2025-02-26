@@ -44,7 +44,7 @@ export default function RootLayout({
           sizes="<generated>"
         />
       </head>
-      <body className={`${inter.className} bg-gray-900 text-white`}>
+      <body className={`${inter.className} bg-gradient-to-br from-black via-blue-950/70 to-gray-950 text-white min-h-screen`}>
         <AudioProvider>
           <Navigation />
           <main className="container mx-auto px-4 py-8">
