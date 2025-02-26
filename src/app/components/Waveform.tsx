@@ -31,7 +31,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: '#4a5568',
-      progressColor: '#3b82f6',
+      progressColor: '#00A1FF',
       cursorColor: 'transparent',
       barWidth: 2,
       height: 64,

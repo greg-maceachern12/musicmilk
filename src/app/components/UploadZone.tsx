@@ -245,7 +245,7 @@ export function UploadZone() {
         // Form Interface
         <div className="space-y-8">
           {/* Waveform Section */}
-          <div className="bg-gray-800 rounded-lg p-6">
+          <div className="bg-gray-800/60 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-xl font-semibold">{audioFile.name}</h3>
@@ -255,7 +255,7 @@ export function UploadZone() {
               </div>
               <button
                 onClick={clearAudio}
-                className="p-2 hover:bg-gray-700 rounded-full"
+                className="p-2 hover:bg-gray-700/60 rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -273,7 +273,7 @@ export function UploadZone() {
             />
 
             {/* Cover Art Upload */}
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className="bg-gray-800/60 rounded-lg p-6">
               <h3 className="text-lg font-medium mb-4">Cover Art</h3>
               {coverPreview ? (
                 <div className="space-y-4">
@@ -288,13 +288,13 @@ export function UploadZone() {
                   <button
                     onClick={clearImage}
                     disabled={isUploading}
-                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700/60 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Remove
                   </button>
                 </div>
               ) : (
-                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg ${!isUploading ? 'cursor-pointer hover:bg-gray-700' : 'opacity-50 cursor-not-allowed'}`}>
+                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg ${!isUploading ? 'cursor-pointer hover:bg-gray-700/60' : 'opacity-50 cursor-not-allowed'}`}>
                   <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
                   <span className="text-sm text-gray-400">Add cover art</span>
                   <input
@@ -311,7 +311,7 @@ export function UploadZone() {
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="bg-gray-800/60 rounded-lg p-4">
               <div className="flex items-center justify-center gap-3">
                 <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                 <span className="text-sm text-gray-400">Uploading your mix...</span>
@@ -324,7 +324,7 @@ export function UploadZone() {
             <button
               onClick={handleUpload}
               disabled={!metadata.title.trim() || !audioFile || isUploading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700/60 
               disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
             >
               {isUploading ? 'Uploading...' : 'Upload Mix'}

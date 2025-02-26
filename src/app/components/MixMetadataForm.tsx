@@ -132,7 +132,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
   };
 
   return (
-    <div className="md:col-span-2 bg-gray-800 rounded-lg p-6 space-y-4">
+    <div className="md:col-span-2 bg-gray-800/60 rounded-lg p-6 space-y-4">
       <h2 className="text-xl font-bold mb-4">Mix Details</h2>
 
       <div className="space-y-4">
@@ -146,7 +146,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
             value={metadata.title}
             onChange={handleChange('title')}
             disabled={disabled}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 
+            className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2 
                      disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="Mix title"
           />
@@ -176,7 +176,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
             value={metadata.genre}
             onChange={handleChange('genre')}
             disabled={disabled}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+            className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2
                      disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="e.g., House, Techno, Ambient"
           />
@@ -190,7 +190,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
             value={metadata.description}
             onChange={handleChange('description')}
             disabled={disabled}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+            className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2
                      disabled:opacity-50 disabled:cursor-not-allowed"
             rows={4}
             placeholder="Tell us about your mix"
@@ -223,7 +223,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
                     value={chapter.title}
                     onChange={handleChapterChange(index, 'title')}
                     disabled={disabled}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+                    className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2
                              disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Song title"
                   />
@@ -234,7 +234,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
                     value={chapter.timestamp}
                     onChange={handleChapterChange(index, 'timestamp')}
                     disabled={disabled}
-                    className={`w-full bg-gray-700 border rounded-lg px-4 py-2
+                    className={`w-full bg-gray/60 border rounded-lg px-4 py-2
                              disabled:opacity-50 disabled:cursor-not-allowed
                              ${chapter.error ? 'border-red-500' : 'border-gray-600'}`}
                     placeholder="HH:MM:SS"
@@ -244,7 +244,7 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
                   type="button"
                   onClick={() => removeChapter(index)}
                   disabled={disabled}
-                  className="p-2 hover:bg-gray-700 rounded-full disabled:opacity-50"
+                  className="p-2 hover:bg-gray-700/60 rounded-full disabled:opacity-50"
                 >
                   <X className="w-5 h-5" />
                 </button>

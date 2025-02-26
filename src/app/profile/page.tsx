@@ -113,7 +113,7 @@ export default function ProfilePage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800"
+      className="min-h-screen"
       variants={fadeIn}
       initial="initial"
       animate="animate"

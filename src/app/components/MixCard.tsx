@@ -35,7 +35,7 @@ export function MixCard({ mix }: MixCardProps) {
   return (
     <Link href={`/mix/${mix.id}`}>
       <motion.div 
-        className="bg-gray-800 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer"
+        className="bg-gray-800/60 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer"
       >
         {/* Cover Image */}
         <div className="relative w-full h-48 bg-gray-700 rounded-md overflow-hidden">
