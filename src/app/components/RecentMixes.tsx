@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { MixCard, MixCardSkeleton } from './MixCard';
@@ -18,6 +18,7 @@ interface Mix {
   title: string;
   artist: string | null;
   genre: string | null;
+  audio_url: string;
   cover_url: string | null;
   play_count: number;
   created_at: string;
@@ -30,11 +31,11 @@ export default function RecentMixes() {
   const supabase = createClientComponentClient();
   const MIXES_TO_SHOW = 3;
 
-  const fetchMixes = async () => {
+  const fetchMixes = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('mixes')
-        .select('id, title, artist, genre, cover_url, play_count, created_at')
+        .select('id, title, artist, genre, audio_url, cover_url, play_count, created_at')
         .order('created_at', { ascending: false })
         .limit(MIXES_TO_SHOW);
 
@@ -48,11 +49,11 @@ export default function RecentMixes() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchMixes();
-  }, []);
+  }, [fetchMixes]);
 
   if (isLoading) {
     return (
@@ -118,7 +119,11 @@ export default function RecentMixes() {
             variants={fadeInUp}
             transition={{ ...defaultTransition, delay: index * 0.1 }}
           >
-            <MixCard mix={mix} />
+            <MixCard 
+              mix={mix} 
+              playlist={mixes}
+              playlistIndex={index}
+            />
           </motion.div>
         ))}
       </motion.div>

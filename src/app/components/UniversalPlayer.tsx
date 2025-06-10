@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useAudio } from '../contexts/AudioContext';
 import { Waveform } from './Waveform';
-import { Music, Play, Pause } from 'lucide-react';
+import { PlaylistQueue } from './PlaylistQueue';
+import { Music, Play, Pause, SkipBack, SkipForward, Shuffle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export function UniversalPlayer() {
   const { state, dispatch } = useAudio();
-  const { currentMix, isPlaying } = state;
+  const { currentMix, isPlaying, shuffleEnabled, playlist, currentIndex } = state;
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -19,6 +20,21 @@ export function UniversalPlayer() {
   const handlePlayPause = () => {
     dispatch({ type: 'TOGGLE_PLAY' });
   };
+
+  const handlePrevious = () => {
+    dispatch({ type: 'PREVIOUS_TRACK' });
+  };
+
+  const handleNext = () => {
+    dispatch({ type: 'NEXT_TRACK' });
+  };
+
+  const handleToggleShuffle = () => {
+    dispatch({ type: 'TOGGLE_SHUFFLE' });
+  };
+
+  const canGoPrevious = currentIndex > 0;
+  const canGoNext = currentIndex < playlist.length - 1;
 
   if (!isVisible) return null;
 
@@ -89,8 +105,19 @@ export function UniversalPlayer() {
               </div>
             </Link>
 
-            {/* Play/Pause Button and Waveform Container */}
-            <div className="flex-1 flex items-center gap-3 lg:gap-4">
+            {/* Controls and Waveform Container */}
+            <div className="flex-1 flex items-center gap-2 lg:gap-3">
+              {/* Previous Button */}
+              <button
+                onClick={handlePrevious}
+                disabled={!canGoPrevious}
+                className="flex-shrink-0 p-2 rounded-full hover:bg-gray-700/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Previous track"
+              >
+                <SkipBack className="w-4 h-4 text-white" />
+              </button>
+
+              {/* Play/Pause Button */}
               <button
                 onClick={handlePlayPause}
                 className="flex-shrink-0 p-2.5 lg:p-3 rounded-full bg-blue-600/90 hover:bg-blue-600 transition-colors shadow-lg hover:shadow-blue-500/20"
@@ -103,6 +130,16 @@ export function UniversalPlayer() {
                 )}
               </button>
 
+              {/* Next Button */}
+              <button
+                onClick={handleNext}
+                disabled={!canGoNext}
+                className="flex-shrink-0 p-2 rounded-full hover:bg-gray-700/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Next track"
+              >
+                <SkipForward className="w-4 h-4 text-white" />
+              </button>
+
               {/* Waveform - Adjusted for mobile */}
               <div className="flex-1 h-16">
                 {currentMix && (
@@ -112,6 +149,23 @@ export function UniversalPlayer() {
                   />
                 )}
               </div>
+
+              {/* Shuffle Toggle - Hidden on mobile */}
+              <button
+                onClick={handleToggleShuffle}
+                className={`hidden sm:flex flex-shrink-0 p-2 rounded-full transition-colors ${
+                  shuffleEnabled 
+                    ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' 
+                    : 'hover:bg-gray-700/50 text-gray-400'
+                }`}
+                aria-label={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
+                title={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
+              >
+                <Shuffle className="w-4 h-4" />
+              </button>
+
+              {/* Playlist Queue */}
+              <PlaylistQueue />
             </div>
           </div>
         </div>

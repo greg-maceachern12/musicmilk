@@ -21,6 +21,7 @@ interface Mix {
   title: string;
   artist: string | null;
   genre: string | null;
+  audio_url: string;
   cover_url: string | null;
   play_count: number;
   created_at: string;
@@ -37,11 +38,11 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [totalCount, setTotalCount] = useState(0);
+  const totalCount = useRef(0);
   const loaderRef = useRef(null);
   const supabase = createClientComponentClient();
 
-  const fetchMixes = async (pageNumber: number, search: string, isInitial: boolean = false) => {
+  const fetchMixes = useCallback(async (pageNumber: number, search: string, isInitial: boolean = false) => {
     try {
       if (!isInitial) {
         setIsLoadingMore(true);
@@ -51,7 +52,7 @@ export default function FeedPage() {
       const startIndex = pageNumber * ITEMS_PER_PAGE;
       
       // Don't fetch if we're beyond the total count
-      if (totalCount > 0 && startIndex >= totalCount) {
+      if (totalCount.current > 0 && startIndex >= totalCount.current) {
         setHasMore(false);
         setIsLoadingMore(false);
         return;
@@ -59,7 +60,7 @@ export default function FeedPage() {
 
       let query = supabase
         .from('mixes')
-        .select('id, title, artist, genre, cover_url, play_count, created_at', { count: 'exact' })
+        .select('id, title, artist, genre, audio_url, cover_url, play_count, created_at', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // Add search functionality
@@ -82,7 +83,7 @@ export default function FeedPage() {
 
       // Update total count only on initial load or search
       if (isInitial && count !== null) {
-        setTotalCount(count);
+        totalCount.current = count;
       }
 
       // Handle no results
@@ -110,7 +111,7 @@ export default function FeedPage() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [supabase]);
 
   // Intersection Observer callback
   const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
@@ -140,16 +141,16 @@ export default function FeedPage() {
     if (page > 0) {
       fetchMixes(page, searchQuery);
     }
-  }, [page]);
+  }, [page, fetchMixes, searchQuery]);
 
   // Initial fetch and search handling
   useEffect(() => {
     setIsLoading(true);
     setPage(0);
     setHasMore(true);
-    setTotalCount(0);
+    totalCount.current = 0;
     fetchMixes(0, searchQuery, true);
-  }, [searchQuery]);
+  }, [searchQuery, fetchMixes]);
 
   // Debounced search function
   const handleSearchChange = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,12 +226,16 @@ export default function FeedPage() {
             initial="initial"
             animate="animate"
           >
-            {mixes.map((mix) => (
+            {mixes.map((mix, index) => (
               <motion.div
                 key={mix.id}
                 {...cardTransition}
               >
-                <MixCard mix={mix} />
+                <MixCard 
+                  mix={mix} 
+                  playlist={mixes}
+                  playlistIndex={index}
+                />
               </motion.div>
             ))}
           </motion.div>

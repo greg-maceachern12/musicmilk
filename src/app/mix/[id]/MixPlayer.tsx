@@ -203,19 +203,76 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
     checkLikeStatus();
   }, [user, mix.id, supabase]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     if (!isCurrentMix) {
-      dispatch({
-        type: 'PLAY_MIX',
-        payload: {
-          id: mix.id,
-          title: mix.title,
-          artist: mix.artist,
-          genre: mix.genre,
-          audio_url: mix.audio_url,
-          cover_url: mix.cover_url
+      // Fetch related mixes to create a playlist
+      try {
+        const { data: relatedMixes } = await supabase
+          .from('mixes')
+          .select('id, title, artist, genre, audio_url, cover_url')
+          .neq('id', mix.id)
+          .or(`genre.eq.${mix.genre},artist.eq.${mix.artist}`)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        // If no related mixes found, get recent mixes
+        if (!relatedMixes || relatedMixes.length === 0) {
+          const { data: recentMixes } = await supabase
+            .from('mixes')
+            .select('id, title, artist, genre, audio_url, cover_url')
+            .neq('id', mix.id)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+          const playlist = [
+            {
+              id: mix.id,
+              title: mix.title,
+              artist: mix.artist,
+              genre: mix.genre,
+              audio_url: mix.audio_url,
+              cover_url: mix.cover_url
+            },
+            ...(recentMixes || [])
+          ];
+
+          dispatch({
+            type: 'SET_PLAYLIST',
+            payload: { mixes: playlist, startIndex: 0 }
+          });
+        } else {
+          const playlist = [
+            {
+              id: mix.id,
+              title: mix.title,
+              artist: mix.artist,
+              genre: mix.genre,
+              audio_url: mix.audio_url,
+              cover_url: mix.cover_url
+            },
+            ...relatedMixes
+          ];
+
+          dispatch({
+            type: 'SET_PLAYLIST',
+            payload: { mixes: playlist, startIndex: 0 }
+          });
         }
-      });
+      } catch (error) {
+        console.error('Error fetching related mixes:', error);
+        // Fallback to single mix
+        dispatch({
+          type: 'PLAY_MIX',
+          payload: {
+            id: mix.id,
+            title: mix.title,
+            artist: mix.artist,
+            genre: mix.genre,
+            audio_url: mix.audio_url,
+            cover_url: mix.cover_url
+          }
+        });
+      }
     } else {
       dispatch({ type: 'TOGGLE_PLAY' });
     }

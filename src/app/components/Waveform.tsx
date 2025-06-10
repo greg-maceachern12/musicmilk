@@ -74,14 +74,31 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
-    if (audioFile) {
-      wavesurfer.loadBlob(audioFile);
-    } else if (audioUrl) {
-      wavesurfer.load(audioUrl);
-    }
+    wavesurfer.on('finish', () => {
+      dispatch({ type: 'TRACK_ENDED' });
+    });
+
+    const loadAudio = async () => {
+      try {
+        if (audioFile) {
+          await wavesurfer.loadBlob(audioFile);
+        } else if (audioUrl) {
+          await wavesurfer.load(audioUrl);
+        }
+      } catch (error) {
+        // This is expected when the component unmounts and destroy() is called.
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error("Wavesurfer error on load: ", error);
+        }
+      }
+    };
+    loadAudio();
 
     return () => {
-      wavesurfer.destroy();
+      if (wavesurferRef.current) {
+        wavesurferRef.current.unAll();
+        wavesurferRef.current.destroy();
+      }
     };
   }, [audioUrl, audioFile, dispatch, state.currentMix]);
 
@@ -95,7 +112,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
 
   // Sync wavesurfer with global play state
   useEffect(() => {
-    if (!wavesurferRef.current || isInternalPlayChange) {
+    if (!wavesurferRef.current || isInternalPlayChange || isLoading) {
       setIsInternalPlayChange(false);
       return;
     }
@@ -108,7 +125,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     } else if (shouldPause) {
       wavesurferRef.current.pause();
     }
-  }, [isPlaying, isInternalPlayChange]);
+  }, [isPlaying, isInternalPlayChange, isLoading]);
 
   const togglePlayPause = () => {
     if (wavesurferRef.current) {

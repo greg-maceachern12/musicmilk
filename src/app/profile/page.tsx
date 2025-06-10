@@ -22,6 +22,7 @@ interface Mix {
   title: string;
   artist: string | null;
   genre: string | null;
+  audio_url: string;
   cover_url: string | null;
   play_count: number;
   created_at: string;
@@ -56,7 +57,7 @@ export default function ProfilePage() {
         // Fetch user's mixes
         const { data: mixesData, error: mixesError } = await supabase
           .from('mixes')
-          .select('id, title, artist, genre, cover_url, play_count, created_at')
+          .select('id, title, artist, genre, audio_url, cover_url, play_count, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -73,6 +74,7 @@ export default function ProfilePage() {
               title,
               artist,
               genre,
+              audio_url,
               cover_url,
               play_count,
               created_at
@@ -303,7 +305,11 @@ export default function ProfilePage() {
                   variants={fadeInUp}
                   transition={{ ...defaultTransition, delay: index * 0.1 }}
                 >
-                  <MixCard mix={mix} />
+                  <MixCard 
+                    mix={mix} 
+                    playlist={mixes}
+                    playlistIndex={index}
+                  />
                 </motion.div>
               ))}
             </motion.div>
@@ -403,7 +409,11 @@ export default function ProfilePage() {
                   variants={fadeInUp}
                   transition={{ ...defaultTransition, delay: index * 0.1 }}
                 >
-                  <MixCard mix={mix} />
+                  <MixCard 
+                    mix={mix} 
+                    playlist={likedMixes}
+                    playlistIndex={index}
+                  />
                 </motion.div>
               ))}
             </motion.div>

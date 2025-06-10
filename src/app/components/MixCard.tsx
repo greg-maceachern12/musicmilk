@@ -1,15 +1,17 @@
 'use client';
 
-import { Music } from 'lucide-react';
+import { Music, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useAudio } from '../contexts/AudioContext';
 
 interface Mix {
   id: string;
   title: string;
   artist: string | null;
   genre: string | null;
+  audio_url: string;
   cover_url: string | null;
   play_count: number;
   created_at: string;
@@ -17,6 +19,8 @@ interface Mix {
 
 interface MixCardProps {
   mix: Mix;
+  playlist?: Mix[];
+  playlistIndex?: number;
 }
 
 const genreVariants = {
@@ -31,12 +35,29 @@ const genreVariants = {
   }
 };
 
-export function MixCard({ mix }: MixCardProps) {
+export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
+  const { dispatch } = useAudio();
+
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (playlist && playlistIndex !== undefined) {
+      dispatch({
+        type: 'SET_PLAYLIST',
+        payload: { mixes: playlist, startIndex: playlistIndex }
+      });
+    } else {
+      dispatch({ type: 'PLAY_MIX', payload: mix });
+    }
+  };
+
   return (
-    <Link href={`/mix/${mix.id}`}>
-      <motion.div 
-        className="bg-gray-800/60 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer"
-      >
+    <div className="relative group">
+      <Link href={`/mix/${mix.id}`}>
+        <motion.div 
+          className="bg-gray-800/60 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer"
+        >
         {/* Cover Image */}
         <div className="relative w-full h-48 bg-gray-700 rounded-md overflow-hidden">
           {mix.cover_url ? (
@@ -70,6 +91,18 @@ export function MixCard({ mix }: MixCardProps) {
               </motion.div>
             </div>
           )}
+          
+          {/* Play Button Overlay */}
+          <motion.button
+            onClick={handlePlayClick}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="bg-blue-600 hover:bg-blue-700 rounded-full p-3 shadow-lg">
+              <Play className="w-6 h-6 text-white ml-0.5" />
+            </div>
+          </motion.button>
         </div>
 
         {/* Mix Info */}
@@ -105,8 +138,9 @@ export function MixCard({ mix }: MixCardProps) {
             </motion.p>
           </div>
         </div>
-      </motion.div>
-    </Link>
+        </motion.div>
+      </Link>
+    </div>
   );
 }
 

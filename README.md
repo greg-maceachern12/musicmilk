@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MusicMilk
+
+MusicMilk is a web application for uploading, sharing, and listening to music mixes. It provides a platform for DJs and music enthusiasts to share their creations with the world.
+
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components:** [Radix UI](https://www.radix-ui.com/) & [Lucide Icons](https://lucide.dev/)
+- **Animations:** [Framer Motion](https://www.framer.com/motion/)
+- **Authentication & Database:** [Supabase](https://supabase.io/)
+- **File Storage:** [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs)
+- **Audio Visualization:** [wavesurfer.js](https://wavesurfer.xyz/)
+- **Deployment:** [Netlify](https://www.netlify.com/)
+
+## Features
+
+- **User Authentication:** Secure sign-up and sign-in functionality using Supabase Auth.
+- **Profile Management:** Users can manage their profiles.
+- **Mix Uploading:** Upload music mixes, which are stored in Azure Blob Storage.
+- **Music Playback:** Stream and listen to mixes with a waveform visualization.
+- **Feed:** Discover new mixes from other users.
 
 ## Getting Started
 
-First, run the development server:
+To get a local copy up and running, follow these simple steps.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Prerequisites
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Node.js (v20 or later)
+- npm
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1.  Clone the repo
+    ```sh
+    git clone https://github.com/your_username/musicmilk.git
+    ```
+2.  Navigate to the project directory
+    ```sh
+    cd musicmilk
+    ```
+3.  Install NPM packages
+    ```sh
+    npm install
+    ```
+4.  Set up your environment variables. Create a `.env.local` file in the root of the project and add the following variables. You will need to create a Supabase project and an Azure Storage account to get these values.
 
-## Learn More
+    ```
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    AZURE_STORAGE_CONNECTION_STRING=your_azure_storage_connection_string
+    AZURE_STORAGE_CONTAINER_NAME=your_azure_storage_container_name
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+5.  Run the development server
+    ```sh
+    npm run dev
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is deployed on [Netlify](https://www.netlify.com/). The deployment configuration can be found in the `netlify.toml` file. Any push to the `main` branch will trigger a new deployment.
