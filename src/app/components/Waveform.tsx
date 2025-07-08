@@ -25,6 +25,22 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const { state, dispatch } = useAudio();
   const { isPlaying, seekTime } = state;
 
+  // Update MediaSession duration when available
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'mediaSession' in navigator && duration > 0 && currentTime >= 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: duration,
+          playbackRate: 1.0,
+          position: currentTime
+        });
+      } catch (error) {
+        // Some browsers might not support position state
+        console.log('MediaSession position state not supported:', error);
+      }
+    }
+  }, [duration, currentTime]);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -44,8 +60,22 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     wavesurferRef.current = wavesurfer;
 
     wavesurfer.on('ready', () => {
-      setDuration(wavesurfer.getDuration());
+      const audioDuration = wavesurfer.getDuration();
+      setDuration(audioDuration);
       setIsLoading(false);
+      
+      // Update MediaSession with duration immediately when ready
+      if (typeof window !== 'undefined' && 'mediaSession' in navigator) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: audioDuration,
+            playbackRate: 1.0,
+            position: 0
+          });
+        } catch (error) {
+          console.log('MediaSession position state not supported:', error);
+        }
+      }
     });
 
     wavesurfer.on('loading', (percent: number) => {

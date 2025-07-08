@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 interface Mix {
   id: string;
@@ -57,6 +57,46 @@ function shuffleArray<T>(array: T[]): T[] {
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
+}
+
+// Media Session Integration
+function updateMediaSession(state: AudioState) {
+  if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
+
+  const { currentMix, isPlaying, currentTime } = state;
+
+  if (currentMix) {
+    // Update metadata
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentMix.title,
+      artist: currentMix.artist || 'Unknown Artist',
+      album: currentMix.genre || 'Mix',
+      artwork: [
+        { src: currentMix.cover_url || '/default-cover.png', sizes: '96x96', type: 'image/png' },
+        { src: currentMix.cover_url || '/default-cover.png', sizes: '128x128', type: 'image/png' },
+        { src: currentMix.cover_url || '/default-cover.png', sizes: '192x192', type: 'image/png' },
+        { src: currentMix.cover_url || '/default-cover.png', sizes: '256x256', type: 'image/png' },
+        { src: currentMix.cover_url || '/default-cover.png', sizes: '384x384', type: 'image/png' },
+        { src: currentMix.cover_url || '/default-cover.png', sizes: '512x512', type: 'image/png' },
+      ]
+    });
+
+    // Update playback state
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+    // Update position state if available
+    if (currentTime !== undefined) {
+      navigator.mediaSession.setPositionState({
+        duration: NaN, // Will be set by audio element
+        playbackRate: 1.0,
+        position: currentTime
+      });
+    }
+  } else {
+    // Clear metadata when no track is playing
+    navigator.mediaSession.metadata = null;
+    navigator.mediaSession.playbackState = 'none';
+  }
 }
 
 function audioReducer(state: AudioState, action: AudioAction): AudioState {
@@ -190,6 +230,75 @@ function audioReducer(state: AudioState, action: AudioAction): AudioState {
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(audioReducer, initialState);
+
+  // Set up MediaSession handlers
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
+
+    const handlePlay = () => {
+      dispatch({ type: 'TOGGLE_PLAY' });
+    };
+
+    const handlePause = () => {
+      dispatch({ type: 'STOP' });
+    };
+
+    const handlePreviousTrack = () => {
+      dispatch({ type: 'PREVIOUS_TRACK' });
+    };
+
+    const handleNextTrack = () => {
+      dispatch({ type: 'NEXT_TRACK' });
+    };
+
+    const handleSeekTo = (details: MediaSessionActionDetails) => {
+      if (details.seekTime !== undefined) {
+        dispatch({ type: 'SEEK', payload: details.seekTime });
+      }
+    };
+
+    // Set up media session action handlers
+    navigator.mediaSession.setActionHandler('play', handlePlay);
+    navigator.mediaSession.setActionHandler('pause', handlePause);
+    navigator.mediaSession.setActionHandler('previoustrack', handlePreviousTrack);
+    navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
+    navigator.mediaSession.setActionHandler('seekto', handleSeekTo);
+
+    // Try to set up additional handlers that might be supported
+    try {
+      navigator.mediaSession.setActionHandler('stop', handlePause);
+      navigator.mediaSession.setActionHandler('seekbackward', (details: MediaSessionActionDetails) => {
+        dispatch({ type: 'SEEK', payload: Math.max(0, state.currentTime - (details.seekOffset || 10)) });
+      });
+      navigator.mediaSession.setActionHandler('seekforward', (details: MediaSessionActionDetails) => {
+        dispatch({ type: 'SEEK', payload: state.currentTime + (details.seekOffset || 10) });
+      });
+    } catch {
+      // Some browsers might not support these handlers
+      console.log('Some media session handlers not supported');
+    }
+
+    // Cleanup function
+    return () => {
+      try {
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('previoustrack', null);
+        navigator.mediaSession.setActionHandler('nexttrack', null);
+        navigator.mediaSession.setActionHandler('seekto', null);
+        navigator.mediaSession.setActionHandler('stop', null);
+        navigator.mediaSession.setActionHandler('seekbackward', null);
+        navigator.mediaSession.setActionHandler('seekforward', null);
+      } catch {
+        // Ignore cleanup errors
+      }
+    };
+  }, [state]);
+
+  // Update MediaSession whenever the state changes
+  useEffect(() => {
+    updateMediaSession(state);
+  }, [state.currentMix, state.isPlaying, state.currentTime, state.playlist, state.currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AudioContext.Provider value={{ state, dispatch }}>
