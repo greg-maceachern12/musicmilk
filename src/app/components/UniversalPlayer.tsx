@@ -10,12 +10,72 @@ import Link from 'next/link';
 
 export function UniversalPlayer() {
   const { state, dispatch } = useAudio();
-  const { currentMix, isPlaying, shuffleEnabled, playlist, currentIndex } = state;
+  const { currentMix, isPlaying, shuffleEnabled, playlist, currentIndex, currentTime } = state;
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(Boolean(currentMix));
   }, [currentMix]);
+
+  // Keep Apple/Safari Now Playing (Media Session) metadata in sync
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    if (!currentMix) return;
+
+    const artwork = currentMix.cover_url
+      ? [
+          { src: currentMix.cover_url, sizes: '96x96', type: 'image/jpeg' },
+          { src: currentMix.cover_url, sizes: '128x128', type: 'image/jpeg' },
+          { src: currentMix.cover_url, sizes: '256x256', type: 'image/jpeg' },
+          { src: currentMix.cover_url, sizes: '512x512', type: 'image/jpeg' },
+        ]
+      : [];
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentMix.title,
+      artist: currentMix.artist || 'Unknown Artist',
+      album: currentMix.genre || 'Mix',
+      artwork,
+    });
+
+    // Remote control handlers
+    navigator.mediaSession.setActionHandler('play', () => {
+      dispatch({ type: 'TOGGLE_PLAY' });
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      dispatch({ type: 'TOGGLE_PLAY' });
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      dispatch({ type: 'PREVIOUS_TRACK' });
+    });
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      dispatch({ type: 'NEXT_TRACK' });
+    });
+
+    navigator.mediaSession.setActionHandler('seekto', (event: MediaSessionActionDetails) => {
+      // Some browsers may not provide this type; keep it safe
+      const seekTime = typeof event.seekTime === 'number' ? event.seekTime : undefined;
+      if (typeof seekTime === 'number' && !Number.isNaN(seekTime)) {
+        dispatch({ type: 'SEEK', payload: seekTime });
+      }
+    });
+    navigator.mediaSession.setActionHandler('seekforward', (event: MediaSessionActionDetails) => {
+      const offset = typeof event.seekOffset === 'number' ? event.seekOffset : 10;
+      const newTime = Math.max(0, (currentTime || 0) + offset);
+      dispatch({ type: 'SEEK', payload: newTime });
+    });
+    navigator.mediaSession.setActionHandler('seekbackward', (event: MediaSessionActionDetails) => {
+      const offset = typeof event.seekOffset === 'number' ? event.seekOffset : 10;
+      const newTime = Math.max(0, (currentTime || 0) - offset);
+      dispatch({ type: 'SEEK', payload: newTime });
+    });
+  }, [currentMix, currentTime, dispatch]);
+
+  // Reflect play/pause state in Media Session
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  }, [isPlaying]);
 
   const handlePlayPause = () => {
     dispatch({ type: 'TOGGLE_PLAY' });

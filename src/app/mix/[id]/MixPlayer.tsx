@@ -148,6 +148,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   const router = useRouter();
   const { state, dispatch } = useAudio();
   const [backgroundColors, setBackgroundColors] = useState<string[]>(['#1e293b', '#0f172a']);
+  const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
 
   // Check if this mix is currently playing
   const isCurrentMix = state.currentMix?.id === mix.id;
@@ -169,6 +170,54 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
       });
     }
   }, [mix]);
+
+  // Update Media Session title based on current chapter so Now Playing shows the song
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    if (!isCurrentMix) return;
+    if (!mix.chapters || mix.chapters.length === 0) return;
+
+    const parseTimestamp = (timestamp: string): number => {
+      const parts = timestamp.split(':').map(Number);
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      return 0;
+    };
+
+    const sortedChapters = [...mix.chapters].sort(
+      (a, b) => parseTimestamp(a.timestamp) - parseTimestamp(b.timestamp)
+    );
+
+    const currentTime = state.currentTime || 0;
+    let newIndex = -1;
+    for (let i = sortedChapters.length - 1; i >= 0; i--) {
+      if (parseTimestamp(sortedChapters[i].timestamp) <= currentTime) {
+        newIndex = i;
+        break;
+      }
+    }
+
+    if (newIndex !== activeChapterIndex) {
+      setActiveChapterIndex(newIndex);
+      const artwork = mix.cover_url
+        ? [
+            { src: mix.cover_url, sizes: '96x96', type: 'image/jpeg' },
+            { src: mix.cover_url, sizes: '128x128', type: 'image/jpeg' },
+            { src: mix.cover_url, sizes: '256x256', type: 'image/jpeg' },
+            { src: mix.cover_url, sizes: '512x512', type: 'image/jpeg' },
+          ]
+        : [];
+
+      const titleToShow = newIndex >= 0 ? sortedChapters[newIndex].title : mix.title;
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: titleToShow,
+        artist: mix.artist || 'Unknown Artist',
+        album: mix.title,
+        artwork,
+      });
+    }
+  }, [state.currentTime, isCurrentMix, mix.chapters, mix.cover_url, mix.artist, mix.title, activeChapterIndex]);
 
   // Fetch mix data and like status
   useEffect(() => {
