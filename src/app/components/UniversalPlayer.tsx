@@ -108,7 +108,7 @@ export function UniversalPlayer() {
         {/* Gradient background overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/30 to-gray-900/50 backdrop-blur-xl border-t border-gray-800/50 shadow-2xl" />
         
-        <div className="container mx-auto h-full relative z-10">
+        <div className="container mx-auto my-auto h-full relative z-10">
           <div className="flex items-center h-full px-4 lg:px-6 gap-4 lg:gap-6">
             {/* Mix Info with hover animation - Hidden on mobile */}
             <Link 
@@ -200,8 +200,8 @@ export function UniversalPlayer() {
                 <SkipForward className="w-4 h-4 text-white" />
               </button>
 
-              {/* Waveform - Adjusted for mobile */}
-              <div className="flex-1 h-16">
+              {/* Waveform - Smaller on mobile */}
+              <div className="flex-1 h-12 max-w-[120px] sm:max-w-none m-auto">
                 {currentMix && (
                   <Waveform
                     audioUrl={currentMix.audio_url}
@@ -210,22 +210,25 @@ export function UniversalPlayer() {
                 )}
               </div>
 
-              {/* Shuffle Toggle - Hidden on mobile */}
-              <button
-                onClick={handleToggleShuffle}
-                className={`hidden sm:flex flex-shrink-0 p-2 rounded-full transition-colors ${
-                  shuffleEnabled 
-                    ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' 
-                    : 'hover:bg-gray-700/50 text-gray-400'
-                }`}
-                aria-label={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
-                title={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
-              >
-                <Shuffle className="w-4 h-4" />
-              </button>
+              {/* Shuffle and Queue buttons - Stacked on mobile */}
+              <div className="flex sm:flex-row flex-col gap-1 sm:gap-2 flex-shrink-0">
+                {/* Shuffle Toggle */}
+                <button
+                  onClick={handleToggleShuffle}
+                  className={`flex flex-shrink-0 p-2 rounded-full transition-colors ${
+                    shuffleEnabled 
+                      ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' 
+                      : 'hover:bg-gray-700/50 text-gray-400'
+                  }`}
+                  aria-label={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
+                  title={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
+                >
+                  <Shuffle className="w-4 h-4" />
+                </button>
 
-              {/* Playlist Queue */}
-              <PlaylistQueue />
+                {/* Playlist Queue */}
+                <PlaylistQueue />
+              </div>
             </div>
           </div>
         </div>

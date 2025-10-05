@@ -41,7 +41,7 @@ export function PlaylistQueue() {
       {/* Queue Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="hidden sm:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-700/50 transition-colors text-gray-400 hover:text-white"
+        className="flex flex-shrink-0 p-2 rounded-full hover:bg-gray-700/50 transition-colors text-gray-400 hover:text-white"
         aria-label="Show queue"
         title={`Queue (${playlist.length} tracks)`}
       >

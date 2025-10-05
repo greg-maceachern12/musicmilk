@@ -28,13 +28,17 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Set height based on screen size: 48 on mobile, 64 on larger screens
+    const isMobile = window.innerWidth < 768;
+    const waveformHeight = isMobile ? 48 : 64;
+
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: '#4a5568',
       progressColor: '#00A1FF',
       cursorColor: 'transparent',
       barWidth: 2,
-      height: 64,
+      height: waveformHeight,
       normalize: true,
       backend: 'WebAudio',
       mediaControls: true,
@@ -145,7 +149,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
         <div ref={containerRef} className={isLoading ? 'invisible' : ''} />
       </div>
       
-      <div className="flex items-center gap-4">
+      {/* <div className="flex items-center gap-4">
         <button
           onClick={togglePlayPause}
           disabled={isLoading}
@@ -163,7 +167,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
           <span>/</span>
           <span>{formatTime(duration)}</span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
