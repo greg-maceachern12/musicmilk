@@ -21,6 +21,33 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+      <Script
+          strategy="afterInteractive"
+          src="https://cdn.amplitude.com/script/f0e77ea0c5ad241d6508e1c7a0c354e9.js"
+        />
+        <Script
+          id="amplitude-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
+              window.amplitude.init('f0e77ea0c5ad241d6508e1c7a0c354e9', {
+                "fetchRemoteConfig": true,
+                "autocapture": {
+                  "attribution": true,
+                  "fileDownloads": true,
+                  "formInteractions": true,
+                  "pageViews": true,
+                  "sessions": true,
+                  "elementInteractions": true,
+                  "networkTracking": true,
+                  "webVitals": true,
+                  "frustrationInteractions": true
+                }
+              });
+            `,
+          }}
+        />
         <Script
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-P8692YZSLG"
