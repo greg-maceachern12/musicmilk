@@ -36,7 +36,7 @@ export default function RecentMixes() {
       const { data, error } = await supabase
         .from('mixes')
         .select('id, title, artist, genre, audio_url, cover_url, play_count, created_at')
-        .order('created_at', { ascending: false })
+        .order('play_count', { ascending: false })
         .limit(MIXES_TO_SHOW);
 
       if (error) {

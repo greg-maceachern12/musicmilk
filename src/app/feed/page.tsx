@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Clock, TrendingUp } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
 import { MixCard, MixCardSkeleton } from '../components/MixCard';
@@ -38,11 +38,12 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'popular'>('recent');
   const totalCount = useRef(0);
   const loaderRef = useRef(null);
   const supabase = createClientComponentClient();
 
-  const fetchMixes = useCallback(async (pageNumber: number, search: string, isInitial: boolean = false) => {
+  const fetchMixes = useCallback(async (pageNumber: number, search: string, sort: 'recent' | 'popular', isInitial: boolean = false) => {
     try {
       if (!isInitial) {
         setIsLoadingMore(true);
@@ -60,8 +61,14 @@ export default function FeedPage() {
 
       let query = supabase
         .from('mixes')
-        .select('id, title, artist, genre, audio_url, cover_url, play_count, created_at', { count: 'exact' })
-        .order('created_at', { ascending: false });
+        .select('id, title, artist, genre, audio_url, cover_url, play_count, created_at', { count: 'exact' });
+
+      // Apply sorting based on sortBy state
+      if (sort === 'popular') {
+        query = query.order('play_count', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
 
       // Add search functionality
       if (search) {
@@ -111,7 +118,7 @@ export default function FeedPage() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [supabase]);
+  }, [supabase, sortBy]);
 
   // Intersection Observer callback
   const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
@@ -139,18 +146,18 @@ export default function FeedPage() {
   // Fetch more mixes when page changes
   useEffect(() => {
     if (page > 0) {
-      fetchMixes(page, searchQuery);
+      fetchMixes(page, searchQuery, sortBy);
     }
-  }, [page, fetchMixes, searchQuery]);
+  }, [page, fetchMixes, searchQuery, sortBy]);
 
-  // Initial fetch and search handling
+  // Initial fetch and search/sort handling
   useEffect(() => {
     setIsLoading(true);
     setPage(0);
     setHasMore(true);
     totalCount.current = 0;
-    fetchMixes(0, searchQuery, true);
-  }, [searchQuery, fetchMixes]);
+    fetchMixes(0, searchQuery, sortBy, true);
+  }, [searchQuery, sortBy, fetchMixes]);
 
   // Debounced search function
   const handleSearchChange = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +172,7 @@ export default function FeedPage() {
           onClick={() => {
             setError(null);
             setPage(0);
-            fetchMixes(0, searchQuery, true);
+            fetchMixes(0, searchQuery, sortBy, true);
           }}
           className="mt-4 px-4 py-2 bg-gray-800 rounded-md hover:bg-gray-700 transition"
         >
@@ -208,6 +215,59 @@ export default function FeedPage() {
             onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+      </motion.div>
+
+      {/* Sort Tabs */}
+      <motion.div 
+        className="max-w-2xl mx-auto px-4"
+        variants={fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={{ ...defaultTransition, delay: 0.3 }}
+      >
+        <div className="flex gap-6 justify-center">
+          <button
+            onClick={() => setSortBy('recent')}
+            className="relative pb-3 flex items-center gap-2 group"
+          >
+            <Clock className={`w-4 h-4 transition-colors ${
+              sortBy === 'recent' ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-300'
+            }`} />
+            <span className={`text-sm font-medium transition-colors ${
+              sortBy === 'recent' ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'
+            }`}>
+              Most Recent
+            </span>
+            {sortBy === 'recent' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </button>
+          
+          <button
+            onClick={() => setSortBy('popular')}
+            className="relative pb-3 flex items-center gap-2 group"
+          >
+            <TrendingUp className={`w-4 h-4 transition-colors ${
+              sortBy === 'popular' ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-300'
+            }`} />
+            <span className={`text-sm font-medium transition-colors ${
+              sortBy === 'popular' ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'
+            }`}>
+              Popular
+            </span>
+            {sortBy === 'popular' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </button>
         </div>
       </motion.div>
 

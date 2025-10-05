@@ -1,7 +1,7 @@
 'use client';
 
 import { UploadZone } from './components/UploadZone';
-import RecentMixes from './components/RecentMixes';
+import RecentMixes from './components/PopularMixes';
 import Link from 'next/link';
 
 export default function Home() {
@@ -46,7 +46,7 @@ export default function Home() {
       {/* Recent Mixes Section */}
       <section className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Recent Mixes</h2>
+          <h2 className="text-2xl font-bold">Popular Drops</h2>
           <Link 
             href="/feed" 
             className="text-blue-400 hover:text-blue-300 transition"
