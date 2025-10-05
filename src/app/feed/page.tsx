@@ -118,7 +118,7 @@ export default function FeedPage() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [supabase, sortBy]);
+  }, [supabase]);
 
   // Intersection Observer callback
   const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {

@@ -43,7 +43,10 @@ export default function RecentMixes() {
         throw error;
       }
 
-      setMixes(data);
+      // Deduplicate by id to avoid duplicate React keys and duplicated items
+      const rows = (data ?? []) as Mix[];
+      const uniqueMixes = Array.from(new Map(rows.map((m) => [m.id, m])).values());
+      setMixes(uniqueMixes);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load mixes');
     } finally {
@@ -115,7 +118,7 @@ export default function RecentMixes() {
       >
         {mixes.map((mix, index) => (
           <motion.div
-            key={mix.id}
+            key={`${mix.id}-${index}`}
             variants={fadeInUp}
             transition={{ ...defaultTransition, delay: index * 0.1 }}
           >

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 
 interface WaveformProps {
@@ -8,17 +7,9 @@ interface WaveformProps {
   audioFile?: File;
 }
 
-const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
-
 export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
@@ -48,7 +39,6 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     wavesurferRef.current = wavesurfer;
 
     wavesurfer.on('ready', () => {
-      setDuration(wavesurfer.getDuration());
       setIsLoading(false);
     });
 
@@ -58,7 +48,6 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
 
     wavesurfer.on('audioprocess', () => {
       const time = wavesurfer.getCurrentTime();
-      setCurrentTime(time);
       dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
@@ -74,7 +63,6 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
 
     wavesurfer.on('seeking', () => {
       const time = wavesurfer.getCurrentTime();
-      setCurrentTime(time);
       dispatch({ type: 'UPDATE_TIME', payload: time });
     });
 
@@ -130,12 +118,6 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
       wavesurferRef.current.pause();
     }
   }, [isPlaying, isInternalPlayChange, isLoading]);
-
-  const togglePlayPause = () => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.playPause();
-    }
-  };
 
   return (
     <div className="space-y-4">
