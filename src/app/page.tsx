@@ -11,6 +11,13 @@ export default function Home() {
       {/* Animated morphing gradient background */}
       <AnimatedGradient />
 
+      {/* Original home-only background gradient - commented out */}
+      {/* <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0b1728] via-[#12324e] to-[#070e19]" />
+        <div className="absolute top-[-15%] left-[-10%] h-[55vh] w-[60vw] rounded-full blur-[110px] opacity-25 bg-[radial-gradient(circle_at_center,_rgba(56,189,248,0.16),_transparent_60%)]" />
+        <div className="absolute bottom-[-20%] right-[-10%] h-[60vh] w-[55vw] rounded-full blur-[120px] opacity-25 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.16),_transparent_60%)]" />
+      </div> */}
+
       <div className="space-y-8">
       {/* Hero Section */}
       <section className="text-center space-y-4 py-12">
