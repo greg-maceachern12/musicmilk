@@ -37,3 +37,64 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #2d3748; /* gray-800 */
 }
+
+/* Animated gradient keyframes */
+@keyframes morph1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(10%, -15%) scale(1.1);
+  }
+  50% {
+    transform: translate(-5%, 10%) scale(0.95);
+  }
+  75% {
+    transform: translate(15%, -5%) scale(1.05);
+  }
+}
+
+@keyframes morph2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-10%, 15%) scale(1.15);
+  }
+  66% {
+    transform: translate(10%, -10%) scale(0.9);
+  }
+}
+
+@keyframes morph3 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: translate(calc(-50% - 5%), calc(-50% - 5%)) scale(1.2) rotate(90deg);
+  }
+  50% {
+    transform: translate(calc(-50% + 5%), calc(-50% + 5%)) scale(0.85) rotate(180deg);
+  }
+  75% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(270deg);
+  }
+}
+
+@keyframes morph4 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-15%, 20%) scale(1.25);
+  }
+}
+
+@keyframes meshMove {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 60px 60px, -60px -60px;
+  }
+}
