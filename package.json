@@ -6,11 +6,14 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "static": "NEXT_PUBLIC_IS_MOBILE=true next build"
   },
   "dependencies": {
     "@azure/identity": "^4.5.0",
     "@azure/storage-blob": "^12.25.0",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
     "@radix-ui/react-slider": "^1.2.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.46.1",
@@ -23,6 +26,7 @@
     "wavesurfer.js": "^7.8.8"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
     "@types/lodash": "^4.17.13",
     "@types/node": "^20",
     "@types/react": "^18",

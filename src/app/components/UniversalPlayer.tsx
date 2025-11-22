@@ -24,11 +24,11 @@ export function UniversalPlayer() {
 
     const artwork = currentMix.cover_url
       ? [
-          { src: currentMix.cover_url, sizes: '96x96', type: 'image/jpeg' },
-          { src: currentMix.cover_url, sizes: '128x128', type: 'image/jpeg' },
-          { src: currentMix.cover_url, sizes: '256x256', type: 'image/jpeg' },
-          { src: currentMix.cover_url, sizes: '512x512', type: 'image/jpeg' },
-        ]
+        { src: currentMix.cover_url, sizes: '96x96', type: 'image/jpeg' },
+        { src: currentMix.cover_url, sizes: '128x128', type: 'image/jpeg' },
+        { src: currentMix.cover_url, sizes: '256x256', type: 'image/jpeg' },
+        { src: currentMix.cover_url, sizes: '512x512', type: 'image/jpeg' },
+      ]
       : [];
 
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -102,17 +102,17 @@ export function UniversalPlayer() {
     <>
       {/* Fixed height spacer */}
       <div className="h-24" />
-      
+
       {/* Fixed Player with glass morphism effect and gradient */}
       <div className="fixed bottom-0 left-0 right-0 h-24">
         {/* Gradient background overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/30 to-gray-900/50 backdrop-blur-xl border-t border-gray-800/50 shadow-2xl" />
-        
+
         <div className="container mx-auto my-auto h-full relative z-10">
           <div className="flex items-center h-full px-4 lg:px-6 gap-4 lg:gap-6">
             {/* Mix Info with hover animation - Hidden on mobile */}
-            <Link 
-              href={`/mix/${currentMix?.id}`} 
+            <Link
+              href={`/mix/${currentMix?.id}`}
               className="hidden sm:flex items-center gap-4 sm:w-[35%] lg:w-[30%] group hover:opacity-90 transition-all duration-200 transform hover:scale-[1.02]"
             >
               <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gray-800 shadow-lg ring-1 ring-white/10">
@@ -130,7 +130,7 @@ export function UniversalPlayer() {
                   </div>
                 )}
               </div>
-              
+
               <div className="min-w-0 flex-1">
                 <h3 className="font-medium text-sm sm:text-base text-white truncate group-hover:text-blue-400 transition-colors">
                   {currentMix?.title}
@@ -144,43 +144,43 @@ export function UniversalPlayer() {
             </Link>
 
             {/* Mobile Mix Info - Compact version */}
-            <Link 
-              href={`/mix/${currentMix?.id}`} 
+            <Link
+              href={`/mix/${currentMix?.id}`}
               className="sm:hidden flex-shrink-0"
             >
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-800 shadow-lg ring-1 ring-white/10">
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-800 shadow-lg ring-1 ring-white/10">
                 {currentMix?.cover_url ? (
                   <Image
                     src={currentMix.cover_url}
                     alt={currentMix.title}
-                    width={48}
-                    height={48}
+                    width={52}
+                    height={52}
                     className="object-cover w-full h-full"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
-                    <Music className="w-5 h-5 text-gray-600" />
+                    <Music className="w-4 h-4 text-gray-600" />
                   </div>
                 )}
               </div>
             </Link>
 
             {/* Controls and Waveform Container */}
-            <div className="flex-1 flex items-center gap-2 lg:gap-3">
+            <div className="flex-1 flex items-center gap-1 sm:gap-2 lg:gap-3 min-w-0">
               {/* Previous Button */}
               <button
                 onClick={handlePrevious}
                 disabled={!canGoPrevious}
-                className="flex-shrink-0 p-2 rounded-full hover:bg-gray-700/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-shrink-0 p-1 sm:p-2 rounded-full hover:bg-gray-700/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Previous track"
               >
-                <SkipBack className="w-4 h-4 text-white" />
+                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </button>
 
               {/* Play/Pause Button */}
               <button
                 onClick={handlePlayPause}
-                className="flex-shrink-0 p-2.5 lg:p-3 rounded-full bg-blue-600/90 hover:bg-blue-600 transition-colors shadow-lg hover:shadow-blue-500/20"
+                className="flex-shrink-0 p-2 sm:p-2.5 lg:p-3 rounded-full bg-blue-600/90 hover:bg-blue-600 transition-colors shadow-lg hover:shadow-blue-500/20"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
@@ -194,14 +194,14 @@ export function UniversalPlayer() {
               <button
                 onClick={handleNext}
                 disabled={!canGoNext}
-                className="flex-shrink-0 p-2 rounded-full hover:bg-gray-700/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-shrink-0 p-1 sm:p-2 rounded-full hover:bg-gray-700/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Next track"
               >
-                <SkipForward className="w-4 h-4 text-white" />
+                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </button>
 
-              {/* Waveform - Smaller on mobile */}
-              <div className="flex-1 h-12 max-w-[120px] sm:max-w-none m-auto">
+              {/* Waveform - Expanded on mobile */}
+              <div className="flex-1 h-14 sm:h-16 min-w-0 px-1 sm:px-0 flex items-center">
                 {currentMix && (
                   <Waveform
                     audioUrl={currentMix.audio_url}
@@ -211,23 +211,24 @@ export function UniversalPlayer() {
               </div>
 
               {/* Shuffle and Queue buttons - Stacked on mobile */}
-              <div className="flex sm:flex-row flex-col gap-1 sm:gap-2 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-2 flex-shrink-0">
                 {/* Shuffle Toggle */}
                 <button
                   onClick={handleToggleShuffle}
-                  className={`flex flex-shrink-0 p-2 rounded-full transition-colors ${
-                    shuffleEnabled 
-                      ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' 
-                      : 'hover:bg-gray-700/50 text-gray-400'
-                  }`}
+                  className={`flex flex-shrink-0 p-1 sm:p-2 rounded-full transition-colors ${shuffleEnabled
+                    ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                    : 'hover:bg-gray-700/50 text-gray-400'
+                    }`}
                   aria-label={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
                   title={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
                 >
-                  <Shuffle className="w-4 h-4" />
+                  <Shuffle className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                 </button>
 
                 {/* Playlist Queue */}
-                <PlaylistQueue />
+                <div className="flex items-center scale-90 sm:scale-100">
+                  <PlaylistQueue />
+                </div>
               </div>
             </div>
           </div>
