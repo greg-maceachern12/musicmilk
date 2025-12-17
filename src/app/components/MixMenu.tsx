@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Link, Trash2, Flag, Pencil, Download } from 'lucide-react';
+import { MoreVertical, Link, Trash2, Flag, Pencil /*, Download */ } from 'lucide-react';
 
 interface MixMenuProps {
   isOwner: boolean;
@@ -40,25 +40,26 @@ export function MixMenu({ isOwner, onDelete, onEdit, audioUrl, mixTitle }: MixMe
     }
   };
 
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(audioUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const originalName = audioUrl.split('/').pop() || 'audio.mp3';
-      a.download = `musicmilk_${mixTitle}_${originalName}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      alert('Failed to download the mix. Please try again.');
-    }
-  };
+  // DEPRECATED: Download functionality has been deprecated
+  // const handleDownload = async () => {
+  //   try {
+  //     const response = await fetch(audioUrl);
+  //     const blob = await response.blob();
+  //     const url = URL.createObjectURL(blob);
+  //     const a = document.createElement('a');
+  //     a.href = url;
+  //     const originalName = audioUrl.split('/').pop() || 'audio.mp3';
+  //     a.download = `musicmilk_${mixTitle}_${originalName}`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     document.body.removeChild(a);
+  //     URL.revokeObjectURL(url);
+  //     setIsOpen(false);
+  //   } catch (error) {
+  //     console.error('Error downloading file:', error);
+  //     alert('Failed to download the mix. Please try again.');
+  //   }
+  // };
 
   const handleEdit = () => {
     if (onEdit) {
@@ -95,13 +96,14 @@ export function MixMenu({ isOwner, onDelete, onEdit, audioUrl, mixTitle }: MixMe
             {copied ? 'Copied!' : 'Copy link'}
           </button>
 
-          <button
+          {/* DEPRECATED: Download functionality has been deprecated */}
+          {/* <button
             onClick={handleDownload}
             className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 flex items-center gap-3 text-gray-200 hover:text-white transition-colors border-t border-gray-700"
           >
             <Download className="w-4 h-4" />
             Download mix
-          </button>
+          </button> */}
 
           {isOwner ? (
             <>

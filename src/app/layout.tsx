@@ -35,7 +35,7 @@ export default function RootLayout({
                 "fetchRemoteConfig": true,
                 "autocapture": {
                   "attribution": true,
-                  "fileDownloads": true,
+                  // "fileDownloads": true, // DEPRECATED: Download functionality has been deprecated
                   "formInteractions": true,
                   "pageViews": true,
                   "sessions": true,
