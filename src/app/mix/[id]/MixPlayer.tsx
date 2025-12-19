@@ -596,8 +596,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                         <MixMenu
                           isOwner={Boolean(user && mix.user_id === user.id)}
                           onDelete={() => setShowDeleteConfirm(true)}
-                          audioUrl={mix.audio_url}
-                          mixTitle={mix.title}
                         />
                       </motion.div>
                     </div>

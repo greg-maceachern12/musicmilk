@@ -7,11 +7,9 @@ interface MixMenuProps {
   isOwner: boolean;
   onDelete: () => void;
   onEdit?: () => void;
-  audioUrl: string;
-  mixTitle: string;
 }
 
-export function MixMenu({ isOwner, onDelete, onEdit, audioUrl, mixTitle }: MixMenuProps) {
+export function MixMenu({ isOwner, onDelete, onEdit }: MixMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
