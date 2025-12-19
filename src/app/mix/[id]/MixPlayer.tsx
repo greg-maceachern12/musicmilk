@@ -493,22 +493,24 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
       <main className="container mx-auto px-4 py-4 lg:py-20 relative">
         <div className="max-w-5xl mx-auto">
           <motion.div
-            className="bg-black/40 backdrop-blur-xl rounded-xl p-4 lg:p-8 shadow-2xl border border-white/5"
+            className="bg-black/20 backdrop-blur-3xl rounded-[2.5rem] p-6 lg:p-12 shadow-2xl border border-white/10 relative overflow-hidden ring-1 ring-white/5"
             variants={scaleIn}
             initial="initial"
             animate="animate"
             transition={{ ...defaultTransition, delay: 0.1 }}
           >
+            {/* Top highlight */}
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
               {/* Cover Art Section */}
               <motion.div
-                className="w-56 lg:w-60 mx-auto lg:mx-0 shrink-0"
+                className="w-64 lg:w-80 mx-auto lg:mx-0 shrink-0 relative z-10"
                 variants={scaleIn}
                 initial="initial"
                 animate="animate"
                 transition={{ ...defaultTransition, delay: 0.2 }}
               >
-                <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/50 shadow-lg relative">
+                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-black/50 shadow-2xl relative ring-1 ring-white/10 rotate-0 transition-transform duration-700 hover:rotate-1">
                   {mix.cover_url ? (
                     <Image
                       src={mix.cover_url}
@@ -539,22 +541,22 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                   >
                     <motion.button
                       onClick={handlePlayPause}
-                      className="shrink-0 w-12 h-12 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-full shadow-lg transition-all"
+                      className="shrink-0 w-16 h-16 flex items-center justify-center bg-white hover:bg-gray-100 text-black rounded-full shadow-xl shadow-white/5 transition-all group/play"
                       variants={cardHover}
                       whileHover="hover"
                       whileTap="tap"
                       aria-label={isPlaying ? 'Pause' : 'Play'}
                     >
                       {isPlaying ? (
-                        <Pause className="w-6 h-6 text-white" />
+                        <Pause className="w-7 h-7 fill-black stroke-none" />
                       ) : (
-                        <Play className="w-6 h-6 ml-1 text-white" />
+                        <Play className="w-7 h-7 ml-1 fill-black stroke-none" />
                       )}
                     </motion.button>
 
                     <div className="flex-1 flex items-start justify-between gap-4 min-w-0">
                       <motion.h1
-                        className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight break-words"
+                        className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight break-words drop-shadow-sm"
                         variants={fadeInUp}
                         transition={{ ...defaultTransition, delay: 0.4 }}
                       >
@@ -569,7 +571,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                         <motion.button
                           onClick={handleLikeToggle}
                           disabled={!user}
-                          className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user ? 'hover:bg-white/10' : 'cursor-not-allowed opacity-50'
+                          className={`group flex items-center gap-2 px-4 py-2.5 rounded-full transition-all border border-white/5 bg-white/5 ${user ? 'hover:bg-white/10 hover:border-white/20' : 'cursor-not-allowed opacity-50'
                             }`}
                           variants={cardHover}
                           whileHover="hover"
@@ -626,7 +628,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                     transition={{ ...defaultTransition, delay: 0.6 }}
                   >
                     <motion.span
-                      className="bg-white/10 backdrop-blur-sm text-white/90 px-3 py-1 rounded-full text-sm font-medium"
+                      className="bg-white/5 backdrop-blur-md border border-white/10 text-white/90 px-4 py-1.5 rounded-full text-sm font-medium tracking-wide hover:bg-white/10 transition-colors"
                       variants={cardHover}
                       whileHover="hover"
                     >
@@ -637,24 +639,26 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
                 {/* Metadata */}
                 <motion.div
-                  className="flex flex-wrap items-center gap-3 text-gray-400 mt-5"
+                  className="flex flex-wrap items-center gap-4 text-white/60 mt-6 text-sm font-medium"
                   variants={fadeInUp}
                   initial="initial"
                   animate="animate"
                   transition={{ ...defaultTransition, delay: 0.7 }}
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
+                    <Calendar className="w-4 h-4 text-white/70" />
                     <span>{formattedDate}</span>
                   </div>
-                  <span>•</span>
-                  <span>{mix.play_count.toLocaleString()} plays</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
+                    <Play className="w-3 h-3 text-white/70 fill-current" />
+                    <span>{mix.play_count.toLocaleString()} plays</span>
+                  </div>
                 </motion.div>
 
                 {/* Description */}
                 {mix.description && (
                   <motion.p
-                    className="text-gray-300 text-sm leading-relaxed mt-5 lg:max-w-2xl"
+                    className="text-white/80 text-base leading-relaxed mt-6 lg:max-w-2xl font-light"
                     variants={fadeInUp}
                     initial="initial"
                     animate="animate"
