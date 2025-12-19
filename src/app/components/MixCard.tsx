@@ -56,12 +56,14 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
     <div className="relative group h-full">
       <Link href={`/mix/${mix.id}`} className="block h-full">
         <motion.div 
+          // @ts-expect-error - Framer motion types conflict with React 19
           className="bg-black/20 backdrop-blur-md rounded-2xl p-4 space-y-4 border border-white/5 hover:bg-black/30 hover:border-white/10 hover:ring-1 hover:ring-white/10 transition-all duration-300 h-full flex flex-col"
         >
         {/* Cover Image */}
         <div className="relative w-full aspect-square bg-gray-900/50 rounded-xl overflow-hidden shadow-lg border border-white/5 group-hover:shadow-2xl transition-all duration-500">
           {mix.cover_url ? (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="relative w-full h-full"
               whileHover={{ 
                 scale: 1.05,
@@ -94,12 +96,14 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
           
           {/* Play Button Overlay */}
           <motion.div
+            // @ts-expect-error - Framer motion types conflict with React 19
             onClick={handlePlayClick}
             className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
           >
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="bg-white text-black rounded-full p-4 shadow-xl shadow-black/20 hover:scale-110 transition-transform"
             >
               <Play className="w-6 h-6 ml-0.5 fill-current" />
@@ -127,6 +131,7 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
             {mix.genre && (
               <div className="flex">
                 <motion.span 
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   className="text-[10px] uppercase tracking-wider font-semibold text-white/60 px-2 py-1 rounded-md bg-white/5 border border-white/5"
                   variants={genreVariants}
                   initial="initial"
@@ -148,6 +153,7 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
 export function MixCardSkeleton() {
   return (
     <motion.div 
+      // @ts-expect-error - Framer motion types conflict with React 19
       className="bg-white/5 rounded-2xl p-4 space-y-4 h-full border border-white/5"
       initial={{ opacity: 0 }}
       animate={{ 
@@ -159,6 +165,7 @@ export function MixCardSkeleton() {
       }}
     >
       <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="bg-white/5 h-64 rounded-xl aspect-square w-full"
         animate={{ 
           opacity: [0.3, 0.5, 0.3],
@@ -171,6 +178,7 @@ export function MixCardSkeleton() {
       />
       <div className="space-y-3">
         <motion.div 
+          // @ts-expect-error - Framer motion types conflict with React 19
           className="h-6 bg-white/5 rounded-md w-3/4"
           animate={{ 
             opacity: [0.3, 0.5, 0.3],
@@ -183,6 +191,7 @@ export function MixCardSkeleton() {
           }}
         />
         <motion.div 
+          // @ts-expect-error - Framer motion types conflict with React 19
           className="h-4 bg-white/5 rounded-md w-1/2"
           animate={{ 
             opacity: [0.3, 0.5, 0.3],

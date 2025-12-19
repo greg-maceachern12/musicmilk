@@ -10,7 +10,9 @@ type Params = Promise<{ id: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  // @ts-expect-error - The library expects a Promise but runtime needs the value
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
   
   const { data: mix } = await supabase
     .from('mixes')
@@ -49,7 +51,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 async function getMixData(id: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  // @ts-expect-error - The library expects a Promise but runtime needs the value
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
   
   // Fetch mix data with chapters
   const { data: mix } = await supabase

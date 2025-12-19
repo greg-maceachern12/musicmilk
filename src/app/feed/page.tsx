@@ -184,11 +184,13 @@ export default function FeedPage() {
 
   return (
     <motion.div 
+      // @ts-expect-error - Framer motion types conflict with React 19
       className="space-y-8 min-h-screen"
       {...pageTransition}
     >
       {/* Header */}
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="text-center space-y-4 py-8"
         variants={fadeInDown}
         initial="initial"
@@ -201,6 +203,7 @@ export default function FeedPage() {
 
       {/* Search Bar */}
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="max-w-2xl mx-auto px-4"
         variants={fadeIn}
         initial="initial"
@@ -220,6 +223,7 @@ export default function FeedPage() {
 
       {/* Sort Tabs */}
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="max-w-2xl mx-auto px-4"
         variants={fadeIn}
         initial="initial"
@@ -242,6 +246,7 @@ export default function FeedPage() {
             {sortBy === 'recent' && (
               <motion.div
                 layoutId="activeTab"
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
@@ -263,6 +268,7 @@ export default function FeedPage() {
             {sortBy === 'popular' && (
               <motion.div
                 layoutId="activeTab"
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
@@ -281,6 +287,7 @@ export default function FeedPage() {
           </div>
         ) : mixes.length > 0 ? (
           <motion.div 
+            // @ts-expect-error - Framer motion types conflict with React 19
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             variants={listContainer}
             initial="initial"
@@ -301,6 +308,7 @@ export default function FeedPage() {
           </motion.div>
         ) : (
           <motion.div 
+            // @ts-expect-error - Framer motion types conflict with React 19
             className="text-center py-8"
             variants={fadeInUp}
             initial="initial"
@@ -315,6 +323,7 @@ export default function FeedPage() {
           <div ref={loaderRef} className="h-10 w-full flex items-center justify-center">
             {isLoadingMore && (
               <motion.div 
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"
                 variants={fadeIn}
                 initial="initial"

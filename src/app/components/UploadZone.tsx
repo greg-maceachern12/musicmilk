@@ -213,7 +213,6 @@ export function UploadZone() {
 
 
   return (
-  return (
     <div className="space-y-6">
       {/* Main Upload Interface */}
       {!audioFile ? (

@@ -68,6 +68,7 @@ export function ChapterList({ chapters }: ChapterListProps) {
           return (
             <motion.button
               key={chapter.id}
+              // @ts-expect-error - Framer motion types conflict with React 19
               onClick={() => handleChapterClick(chapter.timestamp)}
               className={`w-full group relative overflow-hidden rounded-lg transition-all duration-300
                 ${isActive ? 'bg-white/15 ring-2 ring-purple-500 ring-opacity-50' : 'hover:bg-white/10'}
@@ -78,6 +79,7 @@ export function ChapterList({ chapters }: ChapterListProps) {
             >
               {isActive && (
                 <motion.div 
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   className="absolute bottom-0 left-0 h-0.5 bg-purple-500"
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}

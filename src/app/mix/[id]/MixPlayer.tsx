@@ -413,6 +413,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   if (!mix) {
     return (
       <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="min-h-64 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center"
         variants={fadeIn}
         initial="initial"
@@ -433,6 +434,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   // Return statement for MixPlayer.tsx
   return (
     <motion.div
+      // @ts-expect-error - Framer motion types conflict with React 19
       className="relative"
       variants={fadeIn}
       initial="initial"
@@ -444,6 +446,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
       {/* Main gradient background */}
       <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="fixed inset-0 -z-10"
         initial={false}
         animate={{
@@ -462,6 +465,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
       {/* Radial overlay for depth */}
       <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="fixed inset-0 -z-10 opacity-50"
         initial={false}
         animate={{
@@ -493,6 +497,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
       <main className="container mx-auto px-4 py-4 lg:py-20 relative">
         <div className="max-w-5xl mx-auto">
           <motion.div
+            // @ts-expect-error - Framer motion types conflict with React 19
             className="bg-black/20 backdrop-blur-3xl rounded-[2.5rem] p-6 lg:p-12 shadow-2xl border border-white/10 relative overflow-hidden ring-1 ring-white/5"
             variants={scaleIn}
             initial="initial"
@@ -504,6 +509,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
               {/* Cover Art Section */}
               <motion.div
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="w-64 lg:w-80 mx-auto lg:mx-0 shrink-0 relative z-10"
                 variants={scaleIn}
                 initial="initial"
@@ -533,6 +539,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                 {/* Title and Controls */}
                 <div className="flex flex-col gap-4">
                   <motion.div
+                    // @ts-expect-error - Framer motion types conflict with React 19
                     className="flex items-start gap-4"
                     variants={fadeInUp}
                     initial="initial"
@@ -540,6 +547,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                     transition={{ ...defaultTransition, delay: 0.3 }}
                   >
                     <motion.button
+                      // @ts-expect-error - Framer motion types conflict with React 19
                       onClick={handlePlayPause}
                       className="shrink-0 w-16 h-16 flex items-center justify-center bg-white hover:bg-gray-100 text-black rounded-full shadow-xl shadow-white/5 transition-all group/play"
                       variants={cardHover}
@@ -556,6 +564,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
                     <div className="flex-1 flex items-start justify-between gap-4 min-w-0">
                       <motion.h1
+                        // @ts-expect-error - Framer motion types conflict with React 19
                         className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight break-words drop-shadow-sm"
                         variants={fadeInUp}
                         transition={{ ...defaultTransition, delay: 0.4 }}
@@ -564,11 +573,13 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                       </motion.h1>
 
                       <motion.div
+                        // @ts-expect-error - Framer motion types conflict with React 19
                         className="flex items-center gap-1"
                         variants={fadeIn}
                         transition={{ ...defaultTransition, delay: 0.5 }}
                       >
                         <motion.button
+                          // @ts-expect-error - Framer motion types conflict with React 19
                           onClick={handleLikeToggle}
                           disabled={!user}
                           className={`group flex items-center gap-2 px-4 py-2.5 rounded-full transition-all border border-white/5 bg-white/5 ${user ? 'hover:bg-white/10 hover:border-white/20' : 'cursor-not-allowed opacity-50'
@@ -588,6 +599,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                               initial={{ opacity: 0, y: -10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: 10 }}
+                              // @ts-expect-error - Framer motion types conflict with React 19
                               className="text-sm font-medium text-gray-300"
                             >
                               {likeCount}
@@ -606,6 +618,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                   {/* Artist Info */}
                   {mix.artist && (
                     <motion.div
+                      // @ts-expect-error - Framer motion types conflict with React 19
                       className="flex items-center gap-2 text-gray-300"
                       variants={fadeInUp}
                       initial="initial"
@@ -621,6 +634,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                 {/* Genre Tags */}
                 {mix.genre && (
                   <motion.div
+                    // @ts-expect-error - Framer motion types conflict with React 19
                     className="flex flex-wrap gap-2 mt-5"
                     variants={fadeInUp}
                     initial="initial"
@@ -628,6 +642,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                     transition={{ ...defaultTransition, delay: 0.6 }}
                   >
                     <motion.span
+                      // @ts-expect-error - Framer motion types conflict with React 19
                       className="bg-white/5 backdrop-blur-md border border-white/10 text-white/90 px-4 py-1.5 rounded-full text-sm font-medium tracking-wide hover:bg-white/10 transition-colors"
                       variants={cardHover}
                       whileHover="hover"
@@ -639,6 +654,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
                 {/* Metadata */}
                 <motion.div
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   className="flex flex-wrap items-center gap-4 text-white/60 mt-6 text-sm font-medium"
                   variants={fadeInUp}
                   initial="initial"
@@ -658,6 +674,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                 {/* Description */}
                 {mix.description && (
                   <motion.p
+                    // @ts-expect-error - Framer motion types conflict with React 19
                     className="text-white/80 text-base leading-relaxed mt-6 lg:max-w-2xl font-light"
                     variants={fadeInUp}
                     initial="initial"
@@ -672,6 +689,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
             {/* Move ChapterList inside the main content box */}
             {mix.chapters && mix.chapters.length > 0 && (
               <motion.div
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="mt-8 border-t border-white/10 pt-8"
                 variants={fadeInUp}
                 initial="initial"
@@ -689,6 +707,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
       <AnimatePresence>
         {showDeleteConfirm && (
           <motion.div
+            // @ts-expect-error - Framer motion types conflict with React 19
             className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
             variants={fadeIn}
             initial="initial"
@@ -696,6 +715,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
             exit="exit"
           >
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="bg-black/60 backdrop-blur-xl rounded-xl p-4 sm:p-6 w-full max-w-sm mx-auto border border-white/10"
               variants={scaleIn}
               initial="initial"
@@ -715,6 +735,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
               <div className="grid grid-cols-2 gap-3 mt-6">
                 <motion.button
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   onClick={() => setShowDeleteConfirm(false)}
                   className="w-full px-4 py-2.5 text-sm font-medium bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm text-white"
                   variants={cardHover}
@@ -725,6 +746,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                   Cancel
                 </motion.button>
                 <motion.button
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   onClick={handleDelete}
                   className="w-full px-4 py-2.5 text-sm font-medium bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm text-white"
                   variants={cardHover}
