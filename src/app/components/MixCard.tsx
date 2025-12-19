@@ -53,19 +53,19 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
   };
 
   return (
-    <div className="relative group">
-      <Link href={`/mix/${mix.id}`}>
+    <div className="relative group h-full">
+      <Link href={`/mix/${mix.id}`} className="block h-full">
         <motion.div 
-          className="bg-gray-800/60 rounded-lg p-4 space-y-3 hover:bg-gray-750 transition cursor-pointer"
+          className="bg-black/20 backdrop-blur-md rounded-2xl p-4 space-y-4 border border-white/5 hover:bg-black/30 hover:border-white/10 hover:ring-1 hover:ring-white/10 transition-all duration-300 h-full flex flex-col"
         >
         {/* Cover Image */}
-        <div className="relative w-full h-48 bg-gray-700 rounded-md overflow-hidden">
+        <div className="relative w-full aspect-square bg-gray-900/50 rounded-xl overflow-hidden shadow-lg border border-white/5 group-hover:shadow-2xl transition-all duration-500">
           {mix.cover_url ? (
             <motion.div
               className="relative w-full h-full"
               whileHover={{ 
                 scale: 1.05,
-                transition: { duration: 0.4, ease: "easeOut" }
+                transition: { duration: 0.5, ease: [0.33, 1, 0.68, 1] }
               }}
             >
               <Image
@@ -87,55 +87,55 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
                   ease: "easeOut" 
                 }}
               >
-                <Music className="w-12 h-12 text-gray-600" />
+                <Music className="w-16 h-16 text-white/20" />
               </motion.div>
             </div>
           )}
           
           {/* Play Button Overlay */}
-          <motion.button
+          <motion.div
             onClick={handlePlayClick}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
           >
-            <div className="bg-blue-600 hover:bg-blue-700 rounded-full p-3 shadow-lg">
-              <Play className="w-6 h-6 text-white ml-0.5" />
-            </div>
-          </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-white text-black rounded-full p-4 shadow-xl shadow-black/20 hover:scale-110 transition-transform"
+            >
+              <Play className="w-6 h-6 ml-0.5 fill-current" />
+            </motion.button>
+          </motion.div>
         </div>
 
         {/* Mix Info */}
-        <div className="w-full">
-          <div className="w-full">
-            <h3 className="font-medium truncate max-w-full">
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="w-full mb-1">
+            <h3 className="font-bold text-lg text-white/90 truncate max-w-full group-hover:text-white transition-colors">
               {mix.title}
             </h3>
           </div>
-          <div className="flex justify-between items-center text-sm text-gray-400">
-            <div className="flex flex-col min-w-0 flex-1 mr-4">
-              <p className="truncate max-w-full">
-                by {mix.artist || 'Unknown Artist'}
+          <div className="flex flex-col gap-3 mt-auto">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-white/50 truncate max-w-[60%] hover:text-white/70 transition-colors">
+                {mix.artist || 'Unknown Artist'}
               </p>
-              {mix.genre && (
+              <span className="text-xs font-medium text-white/30 flex items-center gap-1">
+                <Play className="w-3 h-3 fill-current" />
+                {mix.play_count}
+              </span>
+            </div>
+            {mix.genre && (
+              <div className="flex">
                 <motion.span 
-                  className="text-blue-400 text-xs truncate"
+                  className="text-[10px] uppercase tracking-wider font-semibold text-white/60 px-2 py-1 rounded-md bg-white/5 border border-white/5"
                   variants={genreVariants}
                   initial="initial"
                   animate="animate"
                 >
                   {mix.genre}
                 </motion.span>
-              )}
-            </div>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="flex-shrink-0"
-            >
-              {mix.play_count} plays
-            </motion.p>
+              </div>
+            )}
           </div>
         </div>
         </motion.div>
@@ -148,7 +148,7 @@ export function MixCard({ mix, playlist, playlistIndex }: MixCardProps) {
 export function MixCardSkeleton() {
   return (
     <motion.div 
-      className="bg-gray-800 rounded-lg p-4 space-y-3"
+      className="bg-white/5 rounded-2xl p-4 space-y-4 h-full border border-white/5"
       initial={{ opacity: 0 }}
       animate={{ 
         opacity: 1,
@@ -159,9 +159,9 @@ export function MixCardSkeleton() {
       }}
     >
       <motion.div
-        className="bg-gray-700 h-48 rounded-md"
+        className="bg-white/5 h-64 rounded-xl aspect-square w-full"
         animate={{ 
-          opacity: [0.5, 0.8, 0.5],
+          opacity: [0.3, 0.5, 0.3],
           transition: {
             repeat: Infinity,
             duration: 1.5,
@@ -169,30 +169,32 @@ export function MixCardSkeleton() {
           }
         }}
       />
-      <motion.div 
-        className="h-4 bg-gray-700 rounded w-3/4"
-        animate={{ 
-          opacity: [0.5, 0.8, 0.5],
-          transition: {
-            repeat: Infinity,
-            duration: 1.5,
-            delay: 0.2,
-            ease: "easeInOut"
-          }
-        }}
-      />
-      <motion.div 
-        className="h-3 bg-gray-700 rounded w-1/2"
-        animate={{ 
-          opacity: [0.5, 0.8, 0.5],
-          transition: {
-            repeat: Infinity,
-            duration: 1.5,
-            delay: 0.4,
-            ease: "easeInOut"
-          }
-        }}
-      />
+      <div className="space-y-3">
+        <motion.div 
+          className="h-6 bg-white/5 rounded-md w-3/4"
+          animate={{ 
+            opacity: [0.3, 0.5, 0.3],
+            transition: {
+              repeat: Infinity,
+              duration: 1.5,
+              delay: 0.2,
+              ease: "easeInOut"
+            }
+          }}
+        />
+        <motion.div 
+          className="h-4 bg-white/5 rounded-md w-1/2"
+          animate={{ 
+            opacity: [0.3, 0.5, 0.3],
+            transition: {
+              repeat: Infinity,
+              duration: 1.5,
+              delay: 0.4,
+              ease: "easeInOut"
+            }
+          }}
+        />
+      </div>
     </motion.div>
   );
 }
