@@ -9,3 +9,4 @@ if (posthogKey) {
     defaults: '2025-11-30'
   })
 }
+

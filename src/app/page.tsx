@@ -4,79 +4,116 @@ import { UploadZone } from './components/UploadZone';
 import RecentMixes from './components/PopularMixes';
 import { AnimatedGradient } from './components/AnimatedGradient';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 }
+};
+
+const stagger = {
+  animate: {
+    transition: {
+      staggerChildren: 0.12
+    }
+  }
+};
 
 export default function Home() {
   return (
     <>
-      {/* Animated morphing gradient background */}
       <AnimatedGradient />
 
-      {/* Original home-only background gradient - commented out */}
-      {/* <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0b1728] via-[#12324e] to-[#070e19]" />
-        <div className="absolute top-[-15%] left-[-10%] h-[55vh] w-[60vw] rounded-full blur-[110px] opacity-25 bg-[radial-gradient(circle_at_center,_rgba(56,189,248,0.16),_transparent_60%)]" />
-        <div className="absolute bottom-[-20%] right-[-10%] h-[60vh] w-[55vw] rounded-full blur-[120px] opacity-25 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.16),_transparent_60%)]" />
-      </div> */}
-
-      <main className="container mx-auto px-4 py-8 lg:py-16 relative z-10">
-        <div className="space-y-16 lg:space-y-24">
-          {/* Hero Section */}
-          <section className="text-center space-y-6 lg:space-y-8 py-8 lg:py-12 relative">
-            {/* Decorative background element behind hero */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] bg-gradient-radial from-blue-500/10 via-transparent to-transparent -z-10 blur-3xl" />
+      <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
+        className="space-y-24 pb-12"
+        initial="initial"
+        animate="animate"
+        variants={stagger}
+      >
+        {/* Hero Section */}
+        <motion.section
+          // @ts-expect-error - Framer motion types conflict with React 19
+          className="relative py-12 text-center"
+          variants={fadeInUp}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto">
+            <motion.h1
+              // @ts-expect-error - Framer motion types conflict with React 19
+              className="text-4xl md:text-5xl font-light tracking-tight text-white"
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            >
+              🎧 Share Your <span className="font-semibold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">Mixes</span>
+            </motion.h1>
             
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white drop-shadow-sm">
-              <span className="block mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50">Share Your</span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400">Sonic Journey</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed font-light">
-              From mashups to mixtapes, Music Milk is the home
-              for all your creative combinations
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
-              <Link 
-                href="/feed" 
-                className="px-8 py-4 bg-white text-black hover:bg-gray-100 transition-all rounded-full font-medium shadow-xl shadow-white/5 hover:scale-105 active:scale-95"
+            <motion.p
+              // @ts-expect-error - Framer motion types conflict with React 19
+              className="text-base text-white/40 font-light leading-relaxed"
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            >
+              The home for mashups, mixtapes, and creative combinations
+            </motion.p>
+
+            <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
+              className="flex items-center gap-3"
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+            >
+              <Link
+                href="/feed"
+                className="px-6 py-2.5 bg-white text-black font-medium rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.12)] hover:scale-[1.02] active:scale-[0.98] text-sm"
               >
                 Browse Mixes
               </Link>
-              <a 
-                href="#upload" 
-                className="px-8 py-4 bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all rounded-full font-medium backdrop-blur-md hover:scale-105 active:scale-95"
+              <a
+                href="#upload"
+                className="px-6 py-2.5 border border-white/20 text-white/80 font-medium rounded-full transition-all duration-300 hover:bg-white/5 hover:border-white/30 hover:text-white hover:scale-[1.02] active:scale-[0.98] text-sm"
               >
                 Upload Mix
               </a>
-            </div>
-          </section>
+            </motion.div>
+          </div>
+        </motion.section>
 
-          {/* Upload Section */}
-          <section id="upload" className="max-w-4xl mx-auto">
-            <div className="bg-black/20 backdrop-blur-2xl rounded-3xl p-1 border border-white/10 shadow-2xl">
-              <div className="bg-black/20 rounded-[1.4rem] p-6 sm:p-10 border border-white/5">
-                <UploadZone />
-              </div>
-            </div>
-          </section>
+        {/* Upload Section */}
+        <motion.section
+          // @ts-expect-error - Framer motion types conflict with React 19
+          id="upload"
+          className="max-w-3xl mx-auto scroll-mt-8"
+          variants={fadeInUp}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <UploadZone />
+        </motion.section>
 
-          {/* Recent Mixes Section */}
-          <section className="space-y-8">
-            <div className="flex justify-between items-end px-2">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-bold text-white tracking-tight">Popular Drops</h2>
-                <p className="text-white/40 text-sm">Listen to what's trending this week</p>
-              </div>
-              <Link 
-                href="/feed" 
-                className="text-white/60 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 group"
-              >
-                View All
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
+        {/* Popular Mixes Section */}
+        <motion.section
+          // @ts-expect-error - Framer motion types conflict with React 19
+          className="space-y-8"
+          variants={fadeInUp}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-light text-white tracking-tight">
+                Popular <span className="font-semibold">Drops</span>
+              </h2>
+              <p className="text-white/30 mt-2 font-light">Trending mixes from the community</p>
             </div>
-            <RecentMixes />
-          </section>
-        </div>
-      </main>
+            <Link
+              href="/feed"
+              className="text-sm text-white/40 hover:text-white/70 transition-colors font-medium tracking-wide uppercase"
+            >
+              View All
+            </Link>
+          </div>
+          <RecentMixes />
+        </motion.section>
+      </motion.div>
     </>
   );
 }
