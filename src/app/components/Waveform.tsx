@@ -106,15 +106,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
 
     initWaveSurfer();
 
-    const handleResize = () => {
-      // Debounce could be added here if needed, but for now simple re-init is fine
-      initWaveSurfer();
-    };
-
-    window.addEventListener('resize', handleResize);
-
     return () => {
-      window.removeEventListener('resize', handleResize);
       if (wavesurferRef.current) {
         wavesurferRef.current.unAll();
         wavesurferRef.current.destroy();

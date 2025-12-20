@@ -419,7 +419,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   return (
     <motion.div
       // @ts-expect-error - Framer motion types conflict with React 19
-      className="relative min-h-screen"
+      className="relative"
       variants={fadeIn}
       initial="initial"
       animate="animate"
@@ -471,7 +471,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
         }}
       />
 
-      <main className="relative pb-32">
+      <main className="relative pb-6">
         {/* Hero Section - Cover Art & Primary Info */}
         <div className="px-4 pt-6 pb-8 sm:pt-10 sm:pb-12 lg:pt-16 lg:pb-16">
           <div className="max-w-6xl mx-auto">
