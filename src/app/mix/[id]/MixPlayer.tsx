@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Music, User, AlertCircle, Heart, Play, Pause } from 'lucide-react';
+import { Calendar, Music, User, AlertCircle, Heart, Play, Pause, Disc3 } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Image from 'next/image';
@@ -78,14 +78,11 @@ async function extractColors(imageSrc: string): Promise<string[]> {
           const b = imageData[i + 2];
           const a = imageData[i + 3];
 
-          // Skip transparent pixels
           if (a < 128) continue;
 
-          // Skip very light colors
           const brightness = (r + g + b) / 3;
           if (brightness > 200) continue;
 
-          // Quantize colors to reduce number of buckets
           const quantizedR = Math.round(r / 24) * 24;
           const quantizedG = Math.round(g / 24) * 24;
           const quantizedB = Math.round(b / 24) * 24;
@@ -94,27 +91,19 @@ async function extractColors(imageSrc: string): Promise<string[]> {
           colorBuckets[colorKey] = (colorBuckets[colorKey] || 0) + 1;
         }
 
-        // Sort buckets by frequency and get top colors
         const sortedColors = Object.entries(colorBuckets)
           .sort(([, a], [, b]) => b - a)
-          .slice(0, 4) // Get top 4 colors
+          .slice(0, 4)
           .map(([color]) => {
             const [r, g, b] = color.split(',').map(Number);
-
-            // Darken the colors
             const darken = (value: number) => Math.floor(value * 0.35);
-
-            // Add a slight saturation boost to maintain color identity
             const saturate = (value: number) => Math.min(255, value * 1.2);
-
             const finalR = darken(saturate(r));
             const finalG = darken(saturate(g));
             const finalB = darken(saturate(b));
-
             return `rgba(${finalR}, ${finalG}, ${finalB}, 0.95)`;
           });
 
-        // Ensure we have 4 colors
         while (sortedColors.length < 4) {
           sortedColors.push('rgba(10, 15, 24, 0.95)');
         }
@@ -150,11 +139,20 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   const [backgroundColors, setBackgroundColors] = useState<string[]>(['#1e293b', '#0f172a']);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
 
-  // Check if this mix is currently playing
   const isCurrentMix = state.currentMix?.id === mix.id;
   const isPlaying = isCurrentMix && state.isPlaying;
 
-  // Set up media session metadata when mix data is loaded
+  useEffect(() => {
+    if (mix?.id) {
+      fetch('/api/mix/view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mixId: mix.id }),
+        keepalive: true
+      }).catch(err => console.error('Failed to increment view count:', err));
+    }
+  }, [mix?.id]);
+
   useEffect(() => {
     if (mix && 'mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -171,7 +169,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
     }
   }, [mix]);
 
-  // Update Media Session title based on current chapter so Now Playing shows the song
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
     if (!isCurrentMix) return;
@@ -219,20 +216,16 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
     }
   }, [state.currentTime, isCurrentMix, mix.chapters, mix.cover_url, mix.artist, mix.title, activeChapterIndex]);
 
-  // Fetch mix data and like status
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
 
-    // Remove fetchMixAndLikes function
-    // Only extract colors if cover exists
     if (mix.cover_url) {
       extractColors(mix.cover_url).then(setBackgroundColors);
     }
   }, [mix.cover_url, supabase.auth]);
 
-  // Check if current user has liked the mix
   useEffect(() => {
     async function checkLikeStatus() {
       if (!user) return;
@@ -254,7 +247,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
   const handlePlayPause = async () => {
     if (!isCurrentMix) {
-      // Fetch related mixes to create a playlist
       try {
         const { data: relatedMixes } = await supabase
           .from('mixes')
@@ -264,7 +256,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
           .order('created_at', { ascending: false })
           .limit(10);
 
-        // If no related mixes found, get recent mixes
         if (!relatedMixes || relatedMixes.length === 0) {
           const { data: recentMixes } = await supabase
             .from('mixes')
@@ -309,7 +300,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
         }
       } catch (error) {
         console.error('Error fetching related mixes:', error);
-        // Fallback to single mix
         dispatch({
           type: 'PLAY_MIX',
           payload: {
@@ -331,13 +321,11 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
     if (!user || !mix || isLikeLoading) return;
 
     setIsLikeLoading(true);
-    // Optimistic update
     setIsLiked(!isLiked);
     setLikeCount(prev => prev + (isLiked ? -1 : 1));
 
     try {
       if (isLiked) {
-        // Unlike
         const { error } = await supabase
           .from('likes')
           .delete()
@@ -346,7 +334,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
         if (error) throw error;
       } else {
-        // Like
         const { error } = await supabase
           .from('likes')
           .insert({
@@ -357,7 +344,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
         if (error) throw error;
       }
     } catch (error) {
-      // Revert optimistic update on error
       console.error('Error toggling like:', error);
       setIsLiked(!isLiked);
       setLikeCount(prev => prev + (isLiked ? 1 : -1));
@@ -388,7 +374,6 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
         throw new Error(error.error || 'Failed to delete files');
       }
 
-      // If files are deleted successfully, delete the database record
       const { error: dbError } = await supabase
         .from('mixes')
         .delete()
@@ -413,6 +398,7 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   if (!mix) {
     return (
       <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="min-h-64 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center"
         variants={fadeIn}
         initial="initial"
@@ -426,13 +412,13 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
 
   const formattedDate = new Date(mix.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric'
   });
 
-  // Return statement for MixPlayer.tsx
   return (
     <motion.div
+      // @ts-expect-error - Framer motion types conflict with React 19
       className="relative"
       variants={fadeIn}
       initial="initial"
@@ -440,279 +426,329 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
       transition={defaultTransition}
     >
       {/* Base dark background */}
-      <div className="fixed inset-0 -z-20 bg-black" />
+      <div className="fixed inset-0 -z-20 bg-[#0a0a0c]" />
 
       {/* Main gradient background */}
       <motion.div
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="fixed inset-0 -z-10"
         initial={false}
         animate={{
           background: `
           linear-gradient(
-            150deg,
+            180deg,
             ${backgroundColors[0]} 0%,
-            ${backgroundColors[1]} 25%,
-            ${backgroundColors[2]} 50%,
-            ${backgroundColors[3]} 100%
+            ${backgroundColors[1]} 30%,
+            rgba(10, 10, 12, 0.98) 70%,
+            #0a0a0c 100%
           )
         `
         }}
         transition={{ duration: 0.8 }}
       />
 
-      {/* Radial overlay for depth */}
+      {/* Radial glow from cover */}
       <motion.div
-        className="fixed inset-0 -z-10 opacity-50"
+        // @ts-expect-error - Framer motion types conflict with React 19
+        className="fixed inset-0 -z-10 opacity-40"
         initial={false}
         animate={{
           background: `
-          radial-gradient(circle at 50% 0%, 
-            ${backgroundColors[0]}00, 
-            ${backgroundColors[1]}40 40%, 
-            ${backgroundColors[2]}80 80%
+          radial-gradient(ellipse 80% 50% at 50% 20%, 
+            ${backgroundColors[0]}80, 
+            transparent 70%
           )
         `
         }}
         transition={{ duration: 0.8 }}
       />
 
-      {/* Subtle animated noise overlay */}
+      {/* Noise texture */}
       <div
-        className="fixed inset-0 -z-10 opacity-[0.15] mix-blend-soft-light"
+        className="fixed inset-0 -z-10 opacity-[0.08] pointer-events-none"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 2000 2000' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          transform: 'translateZ(0)'
         }}
       />
 
-      {/* Blur overlay */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 backdrop-blur-[100px]" />
-      </div>
-
-      <main className="container mx-auto px-4 py-4 lg:py-20 relative">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            className="bg-black/40 backdrop-blur-xl rounded-xl p-4 lg:p-8 shadow-2xl border border-white/5"
-            variants={scaleIn}
-            initial="initial"
-            animate="animate"
-            transition={{ ...defaultTransition, delay: 0.1 }}
-          >
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
-              {/* Cover Art Section */}
+      <main className="relative pb-6">
+        {/* Hero Section - Cover Art & Primary Info */}
+        <div className="px-4 pt-6 pb-8 sm:pt-10 sm:pb-12 lg:pt-16 lg:pb-16">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-12">
+              
+              {/* Cover Art - Full width on mobile, fixed on desktop */}
               <motion.div
-                className="w-56 lg:w-60 mx-auto lg:mx-0 shrink-0"
+                // @ts-expect-error - Framer motion types conflict with React 19
+                className="relative w-full sm:w-80 lg:w-96 mx-auto lg:mx-0 shrink-0"
                 variants={scaleIn}
                 initial="initial"
                 animate="animate"
-                transition={{ ...defaultTransition, delay: 0.2 }}
+                transition={{ ...defaultTransition, delay: 0.1 }}
               >
-                <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/50 shadow-lg relative">
+                <div className="relative aspect-square w-full rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
                   {mix.cover_url ? (
                     <Image
                       src={mix.cover_url}
                       alt={mix.title}
-                      width={320}
-                      height={320}
-                      className="object-cover w-full h-full"
+                      fill
+                      className="object-cover"
                       priority
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-16 sm:w-20 h-16 sm:h-20 text-gray-400" />
+                    <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                      <Disc3 className="w-24 h-24 text-zinc-600" />
                     </div>
                   )}
                 </div>
               </motion.div>
 
-              {/* Mix Info Section */}
-              <div className="flex-1 flex flex-col min-w-0 lg:py-2">
-                {/* Title and Controls */}
-                <div className="flex flex-col gap-4">
+              {/* Mix Info */}
+              <div className="flex-1 min-w-0 lg:pt-4">
+                {/* Genre tag with menu */}
+                {mix.genre && (
                   <motion.div
-                    className="flex items-start gap-4"
+                    // @ts-expect-error - Framer motion types conflict with React 19
+                    className="mb-3 flex items-center gap-2"
+                    variants={fadeInUp}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ ...defaultTransition, delay: 0.2 }}
+                  >
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-white/10 text-white/70 border border-white/10">
+                      {mix.genre}
+                    </span>
+                    <div className="ml-auto">
+                      <MixMenu
+                        isOwner={Boolean(user && mix.user_id === user.id)}
+                        onDelete={() => setShowDeleteConfirm(true)}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+                {!mix.genre && (
+                  <motion.div
+                    // @ts-expect-error - Framer motion types conflict with React 19
+                    className="mb-3 flex items-center justify-end"
+                    variants={fadeInUp}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ ...defaultTransition, delay: 0.2 }}
+                  >
+                    <MixMenu
+                      isOwner={Boolean(user && mix.user_id === user.id)}
+                      onDelete={() => setShowDeleteConfirm(true)}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Title */}
+                <motion.h1
+                  // @ts-expect-error - Framer motion types conflict with React 19
+                  className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-4"
+                  variants={fadeInUp}
+                  initial="initial"
+                  animate="animate"
+                  transition={{ ...defaultTransition, delay: 0.25 }}
+                >
+                  {mix.title}
+                </motion.h1>
+
+                {/* Artist */}
+                {mix.artist && (
+                  <motion.div
+                    // @ts-expect-error - Framer motion types conflict with React 19
+                    className="flex items-center gap-2 mb-6"
                     variants={fadeInUp}
                     initial="initial"
                     animate="animate"
                     transition={{ ...defaultTransition, delay: 0.3 }}
                   >
-                    <motion.button
-                      onClick={handlePlayPause}
-                      className="shrink-0 w-12 h-12 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-full shadow-lg transition-all"
-                      variants={cardHover}
-                      whileHover="hover"
-                      whileTap="tap"
-                      aria-label={isPlaying ? 'Pause' : 'Play'}
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-6 h-6 text-white" />
-                      ) : (
-                        <Play className="w-6 h-6 ml-1 text-white" />
-                      )}
-                    </motion.button>
-
-                    <div className="flex-1 flex items-start justify-between gap-4 min-w-0">
-                      <motion.h1
-                        className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight break-words"
-                        variants={fadeInUp}
-                        transition={{ ...defaultTransition, delay: 0.4 }}
-                      >
-                        {mix.title}
-                      </motion.h1>
-
-                      <motion.div
-                        className="flex items-center gap-1"
-                        variants={fadeIn}
-                        transition={{ ...defaultTransition, delay: 0.5 }}
-                      >
-                        <motion.button
-                          onClick={handleLikeToggle}
-                          disabled={!user}
-                          className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${user ? 'hover:bg-white/10' : 'cursor-not-allowed opacity-50'
-                            }`}
-                          variants={cardHover}
-                          whileHover="hover"
-                          whileTap="tap"
-                          title={user ? 'Like' : 'Sign in to like'}
-                        >
-                          <Heart
-                            className={`w-5 h-5 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-white'
-                              }`}
-                          />
-                          <AnimatePresence mode="wait">
-                            <motion.span
-                              key={likeCount}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              className="text-sm font-medium text-gray-300"
-                            >
-                              {likeCount}
-                            </motion.span>
-                          </AnimatePresence>
-                        </motion.button>
-
-                        <MixMenu
-                          isOwner={Boolean(user && mix.user_id === user.id)}
-                          onDelete={() => setShowDeleteConfirm(true)}
-                        />
-                      </motion.div>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center">
+                      <User className="w-4 h-4 text-zinc-300" />
                     </div>
-                  </motion.div>
-
-                  {/* Artist Info */}
-                  {mix.artist && (
-                    <motion.div
-                      className="flex items-center gap-2 text-gray-300"
-                      variants={fadeInUp}
-                      initial="initial"
-                      animate="animate"
-                      transition={{ ...defaultTransition, delay: 0.5 }}
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="text-base sm:text-lg">{mix.artist}</span>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Genre Tags */}
-                {mix.genre && (
-                  <motion.div
-                    className="flex flex-wrap gap-2 mt-5"
-                    variants={fadeInUp}
-                    initial="initial"
-                    animate="animate"
-                    transition={{ ...defaultTransition, delay: 0.6 }}
-                  >
-                    <motion.span
-                      className="bg-white/10 backdrop-blur-sm text-white/90 px-3 py-1 rounded-full text-sm font-medium"
-                      variants={cardHover}
-                      whileHover="hover"
-                    >
-                      {mix.genre}
-                    </motion.span>
+                    <span className="text-lg sm:text-xl text-white/80 font-medium">{mix.artist}</span>
                   </motion.div>
                 )}
 
-                {/* Metadata */}
+                {/* Play button row */}
                 <motion.div
-                  className="flex flex-wrap items-center gap-3 text-gray-400 mt-5"
+                  // @ts-expect-error - Framer motion types conflict with React 19
+                  className="mb-6 flex items-center gap-2 sm:gap-4"
                   variants={fadeInUp}
                   initial="initial"
                   animate="animate"
-                  transition={{ ...defaultTransition, delay: 0.7 }}
+                  transition={{ ...defaultTransition, delay: 0.35 }}
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
+                  {/* Play button */}
+                  <motion.button
+                    // @ts-expect-error - Framer motion types conflict with React 19
+                    onClick={handlePlayPause}
+                    className="inline-flex items-center gap-2 sm:gap-3 px-6 py-3 sm:px-8 sm:py-4 bg-white hover:bg-white/90 text-black rounded-full font-semibold text-sm sm:text-base transition-all shadow-lg shadow-white/10"
+                    variants={cardHover}
+                    whileHover="hover"
+                    whileTap="tap"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <Pause className="w-5 h-5 fill-black" />
+                        <span>Pause</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-5 h-5 fill-black ml-0.5" />
+                        <span>Play</span>
+                      </>
+                    )}
+                  </motion.button>
+
+                  {/* Now Playing indicator */}
+                  <AnimatePresence>
+                    {isPlaying && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        // @ts-expect-error - Framer motion types conflict with React 19
+                        className="flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+                      >
+                        <div className="flex items-center gap-0.5 sm:gap-1">
+                          <span className="w-0.5 h-2 sm:w-1 sm:h-3 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                          <span className="w-0.5 h-3 sm:w-1 sm:h-4 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                          <span className="w-0.5 h-1.5 sm:w-1 sm:h-2 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <span className="text-emerald-400 font-medium text-xs sm:text-sm">Now Playing</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                {/* Meta info with like button */}
+                <motion.div
+                  // @ts-expect-error - Framer motion types conflict with React 19
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/50"
+                  variants={fadeInUp}
+                  initial="initial"
+                  animate="animate"
+                  transition={{ ...defaultTransition, delay: 0.4 }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>{mix.play_count.toLocaleString()} plays</span>
+                  </div>
+                  <span className="text-white/20">•</span>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
                     <span>{formattedDate}</span>
                   </div>
-                  <span>•</span>
-                  <span>{mix.play_count.toLocaleString()} plays</span>
+                  <span className="text-white/20">•</span>
+                  <motion.button
+                    // @ts-expect-error - Framer motion types conflict with React 19
+                    onClick={handleLikeToggle}
+                    disabled={!user}
+                    className={`
+                      flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all
+                      ${isLiked 
+                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30' 
+                        : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
+                      }
+                      ${!user && 'opacity-50 cursor-not-allowed'}
+                    `}
+                    variants={cardHover}
+                    whileHover={user ? "hover" : undefined}
+                    whileTap={user ? "tap" : undefined}
+                    title={user ? 'Like' : 'Sign in to like'}
+                  >
+                    <Heart
+                      className={`w-3.5 h-3.5 transition-all ${isLiked ? 'fill-rose-400' : ''}`}
+                    />
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={likeCount}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        // @ts-expect-error - Framer motion types conflict with React 19
+                        className="font-medium tabular-nums"
+                      >
+                        {likeCount}
+                      </motion.span>
+                    </AnimatePresence>
+                  </motion.button>
                 </motion.div>
 
                 {/* Description */}
                 {mix.description && (
                   <motion.p
-                    className="text-gray-300 text-sm leading-relaxed mt-5 lg:max-w-2xl"
+                    // @ts-expect-error - Framer motion types conflict with React 19
+                    className="mt-6 text-white/60 text-base leading-relaxed max-w-2xl"
                     variants={fadeInUp}
                     initial="initial"
                     animate="animate"
-                    transition={{ ...defaultTransition, delay: 0.8 }}
+                    transition={{ ...defaultTransition, delay: 0.45 }}
                   >
                     {mix.description}
                   </motion.p>
                 )}
               </div>
             </div>
-            {/* Move ChapterList inside the main content box */}
-            {mix.chapters && mix.chapters.length > 0 && (
-              <motion.div
-                className="mt-8 border-t border-white/10 pt-8"
-                variants={fadeInUp}
-                initial="initial"
-                animate="animate"
-                transition={{ ...defaultTransition, delay: 0.9 }}
-              >
-                <ChapterList chapters={mix.chapters} />
-              </motion.div>
-            )}
-          </motion.div>
+          </div>
         </div>
+
+        {/* Chapters Section */}
+        {mix.chapters && mix.chapters.length > 0 && (
+          <motion.div
+            // @ts-expect-error - Framer motion types conflict with React 19
+            className="px-4 py-8 border-t border-white/5"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            transition={{ ...defaultTransition, delay: 0.5 }}
+          >
+            <div className="max-w-6xl mx-auto">
+              <ChapterList chapters={mix.chapters} />
+            </div>
+          </motion.div>
+        )}
       </main>
 
       {/* Delete Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
           <motion.div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+            // @ts-expect-error - Framer motion types conflict with React 19
+            className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
             variants={fadeIn}
             initial="initial"
             animate="animate"
             exit="exit"
           >
             <motion.div
-              className="bg-black/60 backdrop-blur-xl rounded-xl p-4 sm:p-6 w-full max-w-sm mx-auto border border-white/10"
+              // @ts-expect-error - Framer motion types conflict with React 19
+              className="bg-zinc-900 rounded-2xl p-6 w-full max-w-md mx-auto border border-white/10 shadow-2xl"
               variants={scaleIn}
               initial="initial"
               animate="animate"
               exit="exit"
               transition={defaultTransition}
             >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
-                <div className="space-y-2 flex-1">
-                  <h3 className="text-lg font-semibold text-white">Delete Mix</h3>
-                  <p className="text-gray-300 text-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-6 h-6 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-white mb-2">Delete Mix</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
                     Are you sure you want to delete &ldquo;{mix.title}&rdquo;? This action cannot be undone.
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-6">
+              <div className="flex gap-3 mt-8">
                 <motion.button
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="w-full px-4 py-2.5 text-sm font-medium bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm text-white"
+                  className="flex-1 px-5 py-3 text-sm font-medium bg-white/10 hover:bg-white/15 rounded-xl transition-colors text-white"
                   variants={cardHover}
                   whileHover="hover"
                   whileTap="tap"
@@ -721,8 +757,9 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
                   Cancel
                 </motion.button>
                 <motion.button
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   onClick={handleDelete}
-                  className="w-full px-4 py-2.5 text-sm font-medium bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm text-white"
+                  className="flex-1 px-5 py-3 text-sm font-medium bg-red-500 hover:bg-red-600 rounded-xl transition-colors text-white"
                   variants={cardHover}
                   whileHover="hover"
                   whileTap="tap"

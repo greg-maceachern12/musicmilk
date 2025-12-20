@@ -11,7 +11,7 @@ export default function Navigation() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/50 backdrop-blur-md border-b border-gray-800">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/50 backdrop-blur-xl border-b border-white/10">
         <div className="container mx-auto px-4">
           {/* Main navigation bar */}
           <div className="flex items-center justify-between h-16">
@@ -35,13 +35,13 @@ export default function Navigation() {
             <div className="hidden md:flex md:items-center md:gap-4">
               <Link 
                 href='/feed' 
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors"
               >
                 Explore
               </Link>
               <Link 
                 href='/' 
-                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="bg-white text-black hover:bg-white/90 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 Upload Mix
               </Link>
@@ -53,28 +53,28 @@ export default function Navigation() {
               <AuthButton />
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                 aria-label="Toggle menu"
               >
-                {isMenuOpen ? <X size={24} className="text-gray-300" /> : <Menu size={24} className="text-gray-300" />}
+                {isMenuOpen ? <X size={24} className="text-white/70" /> : <Menu size={24} className="text-white/70" />}
               </button>
             </div>
           </div>
 
           {/* Mobile menu dropdown */}
           {isMenuOpen && (
-            <div className="md:hidden border-t border-gray-700">
+            <div className="md:hidden border-t border-white/10">
               <div className="py-2 space-y-1">
                 <Link 
                   href='/feed' 
-                  className="block px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 transition-colors rounded-lg"
+                  className="block px-4 py-2.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Explore
                 </Link>
                 <Link 
                   href='/' 
-                  className="block px-4 py-2.5 text-white hover:bg-gray-800 transition-colors rounded-lg"
+                  className="block px-4 py-2.5 text-white hover:bg-white/10 transition-colors rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Upload Mix

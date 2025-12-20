@@ -13,7 +13,7 @@ import {
   defaultTransition 
 } from '@/lib/animations';
 
-interface Mix {
+export interface Mix {
   id: string;
   title: string;
   artist: string | null;
@@ -24,14 +24,16 @@ interface Mix {
   created_at: string;
 }
 
-export default function RecentMixes() {
-  const [mixes, setMixes] = useState<Mix[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function RecentMixes({ initialMixes }: { initialMixes?: Mix[] }) {
+  const [mixes, setMixes] = useState<Mix[]>(initialMixes || []);
+  const [isLoading, setIsLoading] = useState(!initialMixes);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
   const MIXES_TO_SHOW = 3;
 
   const fetchMixes = useCallback(async () => {
+    if (initialMixes) return; // Skip fetch if we have initial data
+
     try {
       const { data, error } = await supabase
         .from('mixes')
@@ -61,6 +63,7 @@ export default function RecentMixes() {
   if (isLoading) {
     return (
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         variants={listContainer}
         initial="initial"
@@ -82,6 +85,7 @@ export default function RecentMixes() {
   if (error) {
     return (
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="text-center py-8"
         variants={fadeInUp}
         initial="initial"
@@ -90,6 +94,7 @@ export default function RecentMixes() {
       >
         <p className="text-red-400">{error}</p>
         <motion.button 
+          // @ts-expect-error - Framer motion types conflict with React 19
           onClick={() => window.location.reload()}
           className="mt-4 px-4 py-2 bg-gray-800 rounded-md hover:bg-gray-700 transition"
           variants={cardHover}
@@ -104,6 +109,7 @@ export default function RecentMixes() {
 
   return (
     <motion.div 
+      // @ts-expect-error - Framer motion types conflict with React 19
       className="space-y-6"
       variants={fadeIn}
       initial="initial"
@@ -111,6 +117,7 @@ export default function RecentMixes() {
       transition={defaultTransition}
     >
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         variants={listContainer}
         initial="initial"
@@ -133,6 +140,7 @@ export default function RecentMixes() {
       
       {/* Show More Link */}
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
         className="flex justify-center"
         variants={fadeInUp}
         initial="initial"

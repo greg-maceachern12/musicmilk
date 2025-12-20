@@ -106,15 +106,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
 
     initWaveSurfer();
 
-    const handleResize = () => {
-      // Debounce could be added here if needed, but for now simple re-init is fine
-      initWaveSurfer();
-    };
-
-    window.addEventListener('resize', handleResize);
-
     return () => {
-      window.removeEventListener('resize', handleResize);
       if (wavesurferRef.current) {
         wavesurferRef.current.unAll();
         wavesurferRef.current.destroy();
@@ -152,7 +144,7 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
     <div className="w-full h-full relative">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <span className="text-xs text-blue-400 font-medium bg-gray-900/80 px-2 py-1 rounded">
+          <span className="text-xs text-white/80 font-medium bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
             Loading Audio... {loadingProgress}%
           </span>
         </div>

@@ -5,9 +5,19 @@ const nextConfig = {
   ...(isMobile ? {output: 'export'} : {}),
   images: {
     unoptimized: true,
-    domains: [
-      // Replace with your actual Supabase project URL
-      'jswnswkwsrgbbwlptroi.supabase.co', "visuai.blob.core.windows.net", "musicmilk.co"
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'jswnswkwsrgbbwlptroi.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'visuai.blob.core.windows.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'musicmilk.co',
+      },
     ],
   },
 }

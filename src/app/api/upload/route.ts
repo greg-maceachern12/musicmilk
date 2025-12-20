@@ -31,7 +31,9 @@ interface FileData {
 export async function POST(request: Request) {
   try {
     // Verify user authentication
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+    // @ts-expect-error - The library expects a Promise but runtime needs the value
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const {
       data: { user },
       error: authError,

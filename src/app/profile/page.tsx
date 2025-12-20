@@ -115,6 +115,7 @@ export default function ProfilePage() {
 
   return (
     <motion.div
+      // @ts-expect-error - Framer motion types conflict with React 19
       className="min-h-screen"
       variants={fadeIn}
       initial="initial"
@@ -124,6 +125,7 @@ export default function ProfilePage() {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <motion.div
+          // @ts-expect-error - Framer motion types conflict with React 19
           className="relative"
           variants={fadeInUp}
           initial="initial"
@@ -144,12 +146,14 @@ export default function ProfilePage() {
           <div className="relative pt-8 px-6">
             <div className="max-w-4xl mx-auto">
               <motion.div
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="flex flex-col md:flex-row md:items-end gap-6 md:gap-12 mb-8"
                 variants={fadeInUp}
                 transition={{ ...defaultTransition, delay: 0.3 }}
               >
                 {/* Avatar */}
                 <motion.div
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0"
                   variants={scaleIn}
                   whileHover={{ scale: 1.05 }}
@@ -163,6 +167,7 @@ export default function ProfilePage() {
                 {/* User Info */}
                 <div className="flex-grow">
                   <motion.h1
+                    // @ts-expect-error - Framer motion types conflict with React 19
                     className="text-2xl font-bold mb-2"
                     variants={fadeInUp}
                     transition={{ ...defaultTransition, delay: 0.4 }}
@@ -170,6 +175,7 @@ export default function ProfilePage() {
                     {user.email?.split('@')[0]}
                   </motion.h1>
                   <motion.div
+                    // @ts-expect-error - Framer motion types conflict with React 19
                     className="flex flex-wrap gap-4 text-sm text-gray-400"
                     variants={fadeInUp}
                     transition={{ ...defaultTransition, delay: 0.5 }}
@@ -195,6 +201,7 @@ export default function ProfilePage() {
 
         {/* Your Mixes Section */}
         <motion.div
+          // @ts-expect-error - Framer motion types conflict with React 19
           className="max-w-7xl mx-auto mt-12"
           variants={fadeInUp}
           initial="initial"
@@ -206,6 +213,7 @@ export default function ProfilePage() {
               <h2 className="text-xl font-bold">Your Mixes</h2>
               {!isLoading && (
                 <motion.span
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   className="px-2.5 py-1 text-xs font-medium bg-gray-800 text-gray-300 rounded-full"
                   variants={fadeIn}
                   initial="initial"
@@ -220,6 +228,7 @@ export default function ProfilePage() {
 
           {isLoading ? (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               variants={listContainer}
               initial="initial"
@@ -237,6 +246,7 @@ export default function ProfilePage() {
             </motion.div>
           ) : error ? (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="bg-gray-800/50 rounded-xl p-8 text-center"
               variants={fadeInUp}
               initial="initial"
@@ -245,6 +255,7 @@ export default function ProfilePage() {
             >
               <p className="text-red-400 mb-4">{error}</p>
               <motion.button
+                // @ts-expect-error - Framer motion types conflict with React 19
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
                 variants={cardHover}
@@ -256,6 +267,7 @@ export default function ProfilePage() {
             </motion.div>
           ) : mixes.length === 0 ? (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-12 text-center"
               variants={fadeInUp}
               initial="initial"
@@ -263,12 +275,14 @@ export default function ProfilePage() {
               transition={defaultTransition}
             >
               <motion.div
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6"
                 variants={scaleIn}
               >
                 <Music2 className="w-8 h-8 text-gray-500" />
               </motion.div>
               <motion.h3
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="text-xl font-semibold mb-2"
                 variants={fadeInUp}
                 transition={{ ...defaultTransition, delay: 0.1 }}
@@ -276,6 +290,7 @@ export default function ProfilePage() {
                 No mixes yet
               </motion.h3>
               <motion.p
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="text-gray-400 mb-6"
                 variants={fadeInUp}
                 transition={{ ...defaultTransition, delay: 0.2 }}
@@ -283,6 +298,7 @@ export default function ProfilePage() {
                 Share your first mix with the world
               </motion.p>
               <motion.button
+                // @ts-expect-error - Framer motion types conflict with React 19
                 onClick={() => router.push('/')}
                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors inline-flex items-center gap-2"
                 variants={cardHover}
@@ -294,6 +310,7 @@ export default function ProfilePage() {
             </motion.div>
           ) : (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               variants={listContainer}
               initial="initial"
@@ -318,6 +335,7 @@ export default function ProfilePage() {
 
         {/* Liked Mixes Section */}
         <motion.div
+          // @ts-expect-error - Framer motion types conflict with React 19
           className="max-w-7xl mx-auto mt-16"
           variants={fadeInUp}
           initial="initial"
@@ -329,6 +347,7 @@ export default function ProfilePage() {
               <h2 className="text-xl font-bold">Liked Mixes</h2>
               {!isLoading && (
                 <motion.span
+                  // @ts-expect-error - Framer motion types conflict with React 19
                   className="px-2.5 py-1 text-xs font-medium bg-gray-800 text-gray-300 rounded-full"
                   variants={fadeIn}
                   initial="initial"
@@ -343,6 +362,7 @@ export default function ProfilePage() {
 
           {isLoading ? (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               variants={listContainer}
               initial="initial"
@@ -360,6 +380,7 @@ export default function ProfilePage() {
             </motion.div>
           ) : likedMixes.length === 0 ? (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-12 text-center"
               variants={fadeInUp}
               initial="initial"
@@ -367,12 +388,14 @@ export default function ProfilePage() {
               transition={defaultTransition}
             >
               <motion.div
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6"
                 variants={scaleIn}
               >
                 <Heart className="w-8 h-8 text-gray-500" />
               </motion.div>
               <motion.h3
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="text-xl font-semibold mb-2"
                 variants={fadeInUp}
                 transition={{ ...defaultTransition, delay: 0.1 }}
@@ -380,6 +403,7 @@ export default function ProfilePage() {
                 No liked mixes
               </motion.h3>
               <motion.p
+                // @ts-expect-error - Framer motion types conflict with React 19
                 className="text-gray-400 mb-6"
                 variants={fadeInUp}
                 transition={{ ...defaultTransition, delay: 0.2 }}
@@ -387,6 +411,7 @@ export default function ProfilePage() {
                 Find and like some mixes to add them to your collection
               </motion.p>
               <motion.button
+                // @ts-expect-error - Framer motion types conflict with React 19
                 onClick={() => router.push('/')}
                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors inline-flex items-center gap-2"
                 variants={cardHover}
@@ -398,6 +423,7 @@ export default function ProfilePage() {
             </motion.div>
           ) : (
             <motion.div
+              // @ts-expect-error - Framer motion types conflict with React 19
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               variants={listContainer}
               initial="initial"

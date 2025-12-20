@@ -4,13 +4,15 @@ import { MixPlayer } from './MixPlayer';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 type Params = Promise<{ id: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  // @ts-expect-error - The library expects a Promise but runtime needs the value
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
   
   const { data: mix } = await supabase
     .from('mixes')
@@ -49,7 +51,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 async function getMixData(id: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  // @ts-expect-error - The library expects a Promise but runtime needs the value
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
   
   // Fetch mix data with chapters
   const { data: mix } = await supabase
@@ -75,12 +79,6 @@ async function getMixData(id: string) {
     .from('likes')
     .select('*', { count: 'exact', head: true })
     .eq('mix_id', id);
-
-  // Update play count
-  await supabase
-    .from('mixes')
-    .update({ play_count: (mix.play_count || 0) + 1 })
-    .eq('id', id);
 
   return {
     mix,

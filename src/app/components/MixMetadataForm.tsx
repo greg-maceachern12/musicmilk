@@ -132,13 +132,13 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
   };
 
   return (
-    <div className="md:col-span-2 bg-gray-800/60 rounded-lg p-6 space-y-4">
-      <h2 className="text-xl font-bold mb-4">Mix Details</h2>
+    <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6">
+      <h2 className="text-xl font-bold mb-4 text-white">Mix Details</h2>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Basic fields remain the same */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-white/70 mb-2">
             Title*
           </label>
           <input
@@ -146,14 +146,15 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
             value={metadata.title}
             onChange={handleChange('title')}
             disabled={disabled}
-            className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2 
+            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white
+                     focus:border-white/30 focus:ring-1 focus:ring-white/30 outline-none transition-all placeholder-white/20
                      disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="Mix title"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-white/70 mb-2">
             Artist
           </label>
           <input
@@ -161,14 +162,15 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
             value={metadata.artist}
             onChange={handleChange('artist')}
             disabled={disabled}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2
+            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white
+                     focus:border-white/30 focus:ring-1 focus:ring-white/30 outline-none transition-all placeholder-white/20
                      disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="Artist name"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-white/70 mb-2">
             Genre
           </label>
           <input
@@ -176,46 +178,48 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
             value={metadata.genre}
             onChange={handleChange('genre')}
             disabled={disabled}
-            className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2
+            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white
+                     focus:border-white/30 focus:ring-1 focus:ring-white/30 outline-none transition-all placeholder-white/20
                      disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="e.g., House, Techno, Ambient"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-white/70 mb-2">
             Description
           </label>
           <textarea
             value={metadata.description}
             onChange={handleChange('description')}
             disabled={disabled}
-            className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white
+                     focus:border-white/30 focus:ring-1 focus:ring-white/30 outline-none transition-all placeholder-white/20
+                     disabled:opacity-50 disabled:cursor-not-allowed resize-none"
             rows={4}
             placeholder="Tell us about your mix"
           />
         </div>
 
         {/* Enhanced Chapters section */}
-        <div className="space-y-4">
+        <div className="space-y-4 pt-2">
           <div className="flex justify-between items-center">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-white/70">
               Chapters
             </label>
             <button
               type="button"
               onClick={addChapter}
               disabled={disabled}
-              className="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded
-                       disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full
+                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors uppercase tracking-wider"
             >
               Add Chapter
             </button>
           </div>
 
           {metadata.chapters.map((chapter, index) => (
-            <div key={index} className="space-y-2">
+            <div key={index} className="space-y-2 bg-black/20 p-3 rounded-xl border border-white/5">
               <div className="flex gap-3 items-start">
                 <div className="flex-1">
                   <input
@@ -223,37 +227,39 @@ export function MixMetadataForm({ metadata, onChange, disabled = false }: MixMet
                     value={chapter.title}
                     onChange={handleChapterChange(index, 'title')}
                     disabled={disabled}
-                    className="w-full bg-gray-700/60 border border-gray-600 rounded-lg px-4 py-2
+                    className="w-full bg-transparent border-b border-white/10 px-2 py-1.5 text-white text-sm
+                             focus:border-white/40 outline-none transition-colors placeholder-white/20
                              disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Song title"
                   />
                 </div>
-                <div className="w-32">
+                <div className="w-24">
                   <input
                     type="text"
                     value={chapter.timestamp}
                     onChange={handleChapterChange(index, 'timestamp')}
                     disabled={disabled}
-                    className={`w-full bg-gray/60 border rounded-lg px-4 py-2
+                    className={`w-full bg-transparent border-b px-2 py-1.5 text-white text-sm font-mono text-center
+                             focus:border-white/40 outline-none transition-colors placeholder-white/20
                              disabled:opacity-50 disabled:cursor-not-allowed
-                             ${chapter.error ? 'border-red-500' : 'border-gray-600'}`}
-                    placeholder="HH:MM:SS"
+                             ${chapter.error ? 'border-red-400' : 'border-white/10'}`}
+                    placeholder="00:00"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => removeChapter(index)}
                   disabled={disabled}
-                  className="p-2 hover:bg-gray-700/60 rounded-full disabled:opacity-50"
+                  className="p-1.5 hover:bg-white/10 rounded-full disabled:opacity-50 transition-colors text-white/50 hover:text-white"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               
               {/* Error message */}
               {chapter.error && (
-                <div className="flex items-center gap-2 text-red-400 text-sm ml-1">
-                  <AlertCircle className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-red-400 text-xs ml-2">
+                  <AlertCircle className="w-3 h-3" />
                   <span>{chapter.error}</span>
                 </div>
               )}

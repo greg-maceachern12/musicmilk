@@ -213,29 +213,29 @@ export function UploadZone() {
 
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Main Upload Interface */}
       {!audioFile ? (
         // Initial Upload UI
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8">
-          <div className="flex flex-col items-center justify-center text-center space-y-4">
-            <div className="bg-blue-600/20 p-4 rounded-full">
-              <Upload className="w-8 h-8 text-blue-500" />
+        <div className="border-2 border-dashed border-white/20 bg-white/5 rounded-2xl p-8 hover:bg-white/10 transition-colors duration-300">
+          <div className="flex flex-col items-center justify-center text-center space-y-6">
+            <div className="bg-white/10 p-6 rounded-full shadow-inner ring-1 ring-white/10">
+              <Upload className="w-8 h-8 text-white" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold">Upload Your Mix</h3>
-              <p className="text-sm text-gray-400">
+              <h3 className="text-2xl font-bold text-white">Upload Your Mix</h3>
+              <p className="text-sm text-white/50">
                 Drag and drop or click to select (max 250MB)
               </p>
             </div>
-            <label className="cursor-pointer">
+            <label className="cursor-pointer group">
               <input
                 type="file"
                 className="hidden"
                 accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/*"
                 onChange={handleAudioSelect}
               />
-              <span className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium inline-block">
+              <span className="bg-white text-black hover:bg-gray-100 px-8 py-3 rounded-full font-bold shadow-lg shadow-white/10 transition-all transform group-hover:scale-105 inline-block">
                 Choose File
               </span>
             </label>
@@ -245,19 +245,19 @@ export function UploadZone() {
         // Form Interface
         <div className="space-y-8">
           {/* Waveform Section */}
-          <div className="bg-gray-800/60 rounded-lg p-6">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xl font-semibold">{audioFile.name}</h3>
-                <p className="text-sm text-gray-400">
+                <h3 className="text-xl font-bold text-white">{audioFile.name}</h3>
+                <p className="text-sm text-white/50">
                   {(audioFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
               <button
                 onClick={clearAudio}
-                className="p-2 hover:bg-gray-700/60 rounded-full"
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-white/70" />
               </button>
             </div>
             <Waveform audioFile={audioFile} />
@@ -273,30 +273,30 @@ export function UploadZone() {
             />
 
             {/* Cover Art Upload */}
-            <div className="bg-gray-800/60 rounded-lg p-6">
-              <h3 className="text-lg font-medium mb-4">Cover Art</h3>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 h-fit">
+              <h3 className="text-lg font-bold mb-4 text-white">Cover Art</h3>
               {coverPreview ? (
                 <div className="space-y-4">
-                  <div className="relative aspect-square">
+                  <div className="relative aspect-square shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/10">
                     <Image
                       src={coverPreview}
                       alt="Cover art preview"
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover"
                     />
                   </div>
                   <button
                     onClick={clearImage}
                     disabled={isUploading}
-                    className="w-full px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-white/20 rounded-xl hover:bg-white/10 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
                   >
                     Remove
                   </button>
                 </div>
               ) : (
-                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-600 rounded-lg ${!isUploading ? 'cursor-pointer hover:bg-gray-700/60' : 'opacity-50 cursor-not-allowed'}`}>
-                  <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-400">Add cover art</span>
+                <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/20 rounded-xl bg-black/20 ${!isUploading ? 'cursor-pointer hover:bg-white/5 hover:border-white/30' : 'opacity-50 cursor-not-allowed'} transition-all`}>
+                  <ImageIcon className="w-8 h-8 text-white/30 mb-2" />
+                  <span className="text-sm text-white/50 font-medium">Add cover art</span>
                   <input
                     type="file"
                     className="hidden"
@@ -311,10 +311,10 @@ export function UploadZone() {
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="bg-gray-800/60 rounded-lg p-4">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <div className="flex items-center justify-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                <span className="text-sm text-gray-400">Uploading your mix...</span>
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+                <span className="text-sm text-white/70 font-medium">Uploading your mix...</span>
               </div>
             </div>
           )}
@@ -324,8 +324,8 @@ export function UploadZone() {
             <button
               onClick={handleUpload}
               disabled={!metadata.title.trim() || !audioFile || isUploading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700/60 
-              disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
+              className="bg-white text-black hover:bg-gray-100 disabled:bg-white/10 disabled:text-white/30
+              disabled:cursor-not-allowed px-10 py-4 rounded-full font-bold shadow-xl shadow-white/5 hover:scale-105 active:scale-95 transition-all"
             >
               {isUploading ? 'Uploading...' : 'Upload Mix'}
             </button>
