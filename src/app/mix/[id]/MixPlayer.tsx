@@ -143,6 +143,17 @@ export function MixPlayer({ mix, initialLikeCount }: MixPlayerProps) {
   const isPlaying = isCurrentMix && state.isPlaying;
 
   useEffect(() => {
+    if (mix?.id) {
+      fetch('/api/mix/view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mixId: mix.id }),
+        keepalive: true
+      }).catch(err => console.error('Failed to increment view count:', err));
+    }
+  }, [mix?.id]);
+
+  useEffect(() => {
     if (mix && 'mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: mix.title,

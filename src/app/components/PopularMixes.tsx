@@ -13,7 +13,7 @@ import {
   defaultTransition 
 } from '@/lib/animations';
 
-interface Mix {
+export interface Mix {
   id: string;
   title: string;
   artist: string | null;
@@ -24,14 +24,16 @@ interface Mix {
   created_at: string;
 }
 
-export default function RecentMixes() {
-  const [mixes, setMixes] = useState<Mix[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function RecentMixes({ initialMixes }: { initialMixes?: Mix[] }) {
+  const [mixes, setMixes] = useState<Mix[]>(initialMixes || []);
+  const [isLoading, setIsLoading] = useState(!initialMixes);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
   const MIXES_TO_SHOW = 3;
 
   const fetchMixes = useCallback(async () => {
+    if (initialMixes) return; // Skip fetch if we have initial data
+
     try {
       const { data, error } = await supabase
         .from('mixes')
