@@ -210,25 +210,23 @@ export function UniversalPlayer() {
                 )}
               </div>
 
-              {/* Shuffle and Queue buttons - Stacked on mobile */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-2 flex-shrink-0">
+              {/* Shuffle and Queue buttons - Side by side */}
+              <div className="flex flex-row items-center justify-center gap-1 sm:gap-2 flex-shrink-0">
                 {/* Shuffle Toggle */}
                 <button
                   onClick={handleToggleShuffle}
-                  className={`flex flex-shrink-0 p-1 sm:p-2 rounded-full transition-colors ${shuffleEnabled
+                  className={`flex flex-shrink-0 p-1.5 sm:p-2 rounded-full transition-colors ${shuffleEnabled
                     ? 'bg-white/10 text-white hover:bg-white/15'
                     : 'hover:bg-white/10 text-white/50'
                     }`}
                   aria-label={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
                   title={`Shuffle ${shuffleEnabled ? 'on' : 'off'}`}
                 >
-                  <Shuffle className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                  <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
                 {/* Playlist Queue */}
-                <div className="flex items-center scale-90 sm:scale-100">
-                  <PlaylistQueue />
-                </div>
+                <PlaylistQueue />
               </div>
             </div>
           </div>

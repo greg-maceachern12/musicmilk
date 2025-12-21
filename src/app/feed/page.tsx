@@ -6,6 +6,7 @@ import { Search, Clock, TrendingUp } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
 import { MixCard, MixCardSkeleton } from '../components/MixCard';
+import { AnimatedGradient } from '../components/AnimatedGradient';
 import {
   fadeIn,
   fadeInDown,
@@ -183,13 +184,16 @@ export default function FeedPage() {
   }
 
   return (
-    <motion.div 
-      // @ts-expect-error - Framer motion types conflict with React 19
-      className="space-y-8 min-h-screen"
-      {...pageTransition}
-    >
-      {/* Header */}
+    <>
+      <AnimatedGradient />
+      
       <motion.div 
+        // @ts-expect-error - Framer motion types conflict with React 19
+        className="space-y-8 min-h-screen"
+        {...pageTransition}
+      >
+        {/* Header */}
+        <motion.div 
         // @ts-expect-error - Framer motion types conflict with React 19
         className="text-center space-y-4 py-8"
         variants={fadeInDown}
@@ -333,7 +337,8 @@ export default function FeedPage() {
           </div>
         )}
       </div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }
 
