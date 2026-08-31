@@ -127,6 +127,7 @@ function audioReducer(state: AudioState, action: AudioAction): AudioState {
           currentIndex: nextIndex,
           currentMix: state.playlist[nextIndex],
           isPlaying: true,
+          currentTime: 0,
         };
       }
       return state;
@@ -138,6 +139,7 @@ function audioReducer(state: AudioState, action: AudioAction): AudioState {
           currentIndex: prevIndex,
           currentMix: state.playlist[prevIndex],
           isPlaying: true,
+          currentTime: 0,
         };
       }
       return state;
@@ -177,6 +179,7 @@ function audioReducer(state: AudioState, action: AudioAction): AudioState {
           currentIndex: nextIndex,
           currentMix: state.playlist[nextIndex],
           isPlaying: true,
+          currentTime: 0,
         };
       }
       return {

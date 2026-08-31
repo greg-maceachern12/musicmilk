@@ -1,6 +1,9 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { useAudio } from '../contexts/AudioContext';
+import { getSharedMediaElement } from '@/lib/sharedAudio';
 
 interface WaveformProps {
   audioUrl?: string;
@@ -10,32 +13,48 @@ interface WaveformProps {
 export function Waveform({ audioUrl, audioFile }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const isPlayingRef = useRef(false);
+  const ignorePauseRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  const [isInternalPlayChange, setIsInternalPlayChange] = useState(false);
   const { state, dispatch } = useAudio();
   const { isPlaying, seekTime } = state;
+
+  isPlayingRef.current = isPlaying;
 
   useEffect(() => {
     if (!containerRef.current) return;
 
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const destroyCurrent = () => {
+      if (!wavesurferRef.current) return;
+      ignorePauseRef.current = true;
+      wavesurferRef.current.unAll();
+      wavesurferRef.current.destroy();
+      wavesurferRef.current = null;
+    };
+
     const initWaveSurfer = () => {
-      if (!containerRef.current) return;
+      if (cancelled || !containerRef.current) return;
 
       // If container has no width (e.g. hidden or not laid out yet), wait and retry
       if (containerRef.current.clientWidth === 0) {
-        setTimeout(initWaveSurfer, 100);
+        retryTimer = setTimeout(initWaveSurfer, 100);
         return;
       }
 
-      // Get the computed height of the container to ensure the waveform fits perfectly
+      destroyCurrent();
+
       const waveformHeight = containerRef.current.clientHeight;
 
-      // Destroy existing instance if any (shouldn't happen due to cleanup, but safe)
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-        wavesurferRef.current = null;
+      // Reuse one element for streamed playback so the next track can
+      // autoplay. File previews (uploads) keep a fresh element.
+      const media = audioUrl ? getSharedMediaElement() : undefined;
+      if (media) {
+        media.autoplay = isPlayingRef.current;
       }
 
       const wavesurfer = WaveSurfer.create({
@@ -46,15 +65,22 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
         barWidth: 2,
         height: waveformHeight,
         normalize: true,
-        backend: 'WebAudio',
-        mediaControls: true,
-        media: document.createElement('audio')
+        backend: 'MediaElement',
+        mediaControls: false,
+        autoplay: isPlayingRef.current,
+        ...(media ? { media } : {}),
       });
 
       wavesurferRef.current = wavesurfer;
 
       wavesurfer.on('ready', () => {
+        ignorePauseRef.current = false;
         setIsLoading(false);
+        if (isPlayingRef.current && !wavesurfer.isPlaying()) {
+          void wavesurfer.play().catch((error: unknown) => {
+            console.error('Wavesurfer play failed:', error);
+          });
+        }
       });
 
       wavesurfer.on('loading', (percent: number) => {
@@ -66,26 +92,26 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
         dispatch({ type: 'UPDATE_TIME', payload: time });
       });
 
-      wavesurfer.on('play', () => {
-        setIsInternalPlayChange(true);
-        dispatch({ type: 'PLAY_MIX', payload: state.currentMix! });
-      });
-
-      wavesurfer.on('pause', () => {
-        setIsInternalPlayChange(true);
-        dispatch({ type: 'STOP' });
-      });
-
       wavesurfer.on('seeking', () => {
         const time = wavesurfer.getCurrentTime();
         dispatch({ type: 'UPDATE_TIME', payload: time });
       });
 
+      // HTML media fires `pause` as well as `ended` when a track finishes.
+      // If we treat that pause as a user stop, autoplay of the next track
+      // is cancelled (isPlaying flipped back to false).
       wavesurfer.on('finish', () => {
+        ignorePauseRef.current = true;
         dispatch({ type: 'TRACK_ENDED' });
       });
 
+      wavesurfer.on('pause', () => {
+        if (ignorePauseRef.current) return;
+        dispatch({ type: 'STOP' });
+      });
+
       const loadAudio = async () => {
+        ignorePauseRef.current = true;
         try {
           if (audioFile) {
             await wavesurfer.loadBlob(audioFile);
@@ -95,50 +121,54 @@ export function Waveform({ audioUrl, audioFile }: WaveformProps) {
         } catch (error) {
           // This is expected when the component unmounts and destroy() is called.
           if (error instanceof Error && error.name !== 'AbortError') {
-            console.error("Wavesurfer error on load: ", error);
+            console.error('Wavesurfer error on load: ', error);
           }
         }
       };
-      loadAudio();
+      void loadAudio();
     };
 
-
-
+    setIsLoading(true);
+    setLoadingProgress(0);
     initWaveSurfer();
 
     return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.unAll();
-        wavesurferRef.current.destroy();
-        wavesurferRef.current = null;
-      }
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      destroyCurrent();
     };
-  }, [audioUrl, audioFile, dispatch, state.currentMix]);
+  }, [audioUrl, audioFile, dispatch]);
 
-  // Handle seekings
+  // Handle seeking
   useEffect(() => {
     if (seekTime !== undefined && wavesurferRef.current && !isLoading) {
-      wavesurferRef.current.seekTo(seekTime / wavesurferRef.current.getDuration());
+      const duration = wavesurferRef.current.getDuration();
+      if (duration > 0) {
+        wavesurferRef.current.seekTo(seekTime / duration);
+      }
       dispatch({ type: 'CLEAR_SEEK' });
     }
   }, [seekTime, isLoading, dispatch]);
 
   // Sync wavesurfer with global play state
   useEffect(() => {
-    if (!wavesurferRef.current || isInternalPlayChange || isLoading) {
-      setIsInternalPlayChange(false);
-      return;
-    }
+    const wavesurfer = wavesurferRef.current;
+    if (!wavesurfer || isLoading) return;
 
-    const shouldPlay = isPlaying && !wavesurferRef.current.isPlaying();
-    const shouldPause = !isPlaying && wavesurferRef.current.isPlaying();
+    const shouldPlay = isPlaying && !wavesurfer.isPlaying();
+    const shouldPause = !isPlaying && wavesurfer.isPlaying();
 
     if (shouldPlay) {
-      wavesurferRef.current.play();
+      ignorePauseRef.current = false;
+      void wavesurfer.play().catch((error: unknown) => {
+        console.error('Wavesurfer play failed:', error);
+      });
     } else if (shouldPause) {
-      wavesurferRef.current.pause();
+      ignorePauseRef.current = true;
+      wavesurfer.pause();
+      ignorePauseRef.current = false;
     }
-  }, [isPlaying, isInternalPlayChange, isLoading]);
+  }, [isPlaying, isLoading]);
 
   return (
     <div className="w-full h-full relative">
