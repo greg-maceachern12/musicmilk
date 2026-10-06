@@ -49,6 +49,30 @@ export async function POST(request: Request) {
 
     console.log("Authenticated user:", user.id);
 
+    if (!mixId) {
+      return NextResponse.json({ error: "mixId is required" }, { status: 400 });
+    }
+
+    // Confirm ownership before deleting chapters, likes, or storage files.
+    const { data: mix, error: mixError } = await supabase
+      .from("mixes")
+      .select("user_id")
+      .eq("id", mixId)
+      .single();
+
+    if (mixError || !mix) {
+      console.error("Error fetching mix:", mixError);
+      return NextResponse.json({ error: "Mix not found" }, { status: 404 });
+    }
+
+    if (mix.user_id !== user.id) {
+      console.log("User does not own mix");
+      return NextResponse.json(
+        { error: "You do not own this mix" },
+        { status: 403 }
+      );
+    }
+
     const { error: chaptersError } = await supabase
       .from("chapters")
       .delete()
@@ -73,23 +97,6 @@ export async function POST(request: Request) {
         { error: "Failed to delete likes" },
         { status: 500 }
       );
-    }
-
-    // Verify user owns this mix
-    const { data: mix, error: mixError } = await supabase
-      .from("mixes")
-      .select("user_id")
-      .eq("id", mixId)
-      .single();
-
-    if (mixError) {
-      console.error("Error fetching mix:", mixError);
-      return NextResponse.json({ error: "Mix not found" }, { status: 404 });
-    }
-
-    if (mix.user_id !== user.id) {
-      console.log("User does not own mix");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Delete audio file

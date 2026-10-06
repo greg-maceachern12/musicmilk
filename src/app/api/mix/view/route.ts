@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { mixId } = await request.json();
-    
+
     if (!mixId) {
       return NextResponse.json({ error: 'mixId is required' }, { status: 400 });
     }
@@ -14,26 +14,14 @@ export async function POST(request: Request) {
     // @ts-expect-error - The library expects a Promise but runtime needs the value
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-    // First, get the current play_count
-    const { data: mix, error: fetchError } = await supabase
-      .from('mixes')
-      .select('play_count')
-      .eq('id', mixId)
-      .single();
+    // Atomic increment. play_count is not directly writable under owner-only RLS;
+    // anon and authenticated may only change it through this SECURITY DEFINER function.
+    const { error } = await supabase.rpc('increment_mix_play_count', {
+      mix_id: mixId,
+    });
 
-    if (fetchError || !mix) {
-      console.error('Error fetching mix:', fetchError);
-      return NextResponse.json({ error: 'Mix not found' }, { status: 404 });
-    }
-
-    // Increment play_count
-    const { error: updateError } = await supabase
-      .from('mixes')
-      .update({ play_count: (mix.play_count || 0) + 1 })
-      .eq('id', mixId);
-
-    if (updateError) {
-      console.error('Error incrementing play count:', updateError);
+    if (error) {
+      console.error('Error incrementing play count:', error);
       return NextResponse.json({ error: 'Failed to increment play count' }, { status: 500 });
     }
 
@@ -46,4 +34,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
